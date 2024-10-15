@@ -272,6 +272,8 @@ class MultiHeadAttention(nn.Module):
 
     def attention(self, query, key, value, mask=None):
         # reshape [b, d, t] -> [b, n_h, t, d_k]
+        # b, d = key.size()
+        # t_s, t_t = query.size(2)
         b, d, t_s, t_t = (*key.size(), query.size(2))
         query = query.view(b, self.n_heads, self.k_channels, t_t).transpose(2, 3)
         key = key.view(b, self.n_heads, self.k_channels, t_s).transpose(2, 3)

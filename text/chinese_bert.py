@@ -28,7 +28,9 @@ def get_bert_feature(
     if not device:
         device = "cuda"
     if device not in models.keys():
-        models[device] = AutoModelForMaskedLM.from_pretrained(LOCAL_PATH).to(device)
+        from transformers import logging
+        logging.set_verbosity_error()  # 只显示错误，不显示警告
+        models[device] = AutoModelForMaskedLM.from_pretrained(LOCAL_PATH, ignore_mismatched_sizes=True).to(device)
     with torch.no_grad():
         inputs = tokenizer(text, return_tensors="pt")
         for i in inputs:

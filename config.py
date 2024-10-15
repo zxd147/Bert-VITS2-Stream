@@ -13,18 +13,18 @@ import sys
 class Resample_config:
     """重采样配置"""
 
-    def __init__(self, in_dir: str, out_dir: str, sampling_rate: int = 44100):
+    def __init__(self, in_path: str, out_path: str, sampling_rate: int = 44100):
         self.sampling_rate: int = sampling_rate  # 目标采样率
-        self.in_dir: str = in_dir  # 待处理音频目录路径
-        self.out_dir: str = out_dir  # 重采样输出路径
+        self.in_path: str = in_path  # 待处理音频目录路径
+        self.out_path: str = out_path  # 重采样输出路径
 
     @classmethod
     def from_dict(cls, dataset_path: str, data: Dict[str, any]):
         """从字典中生成实例"""
 
         # 不检查路径是否有效，此逻辑在resample.py中处理
-        data["in_dir"] = os.path.join(dataset_path, data["in_dir"])
-        data["out_dir"] = os.path.join(dataset_path, data["out_dir"])
+        data["in_path"] = os.path.join(dataset_path, data["in_path"])
+        data["out_path"] = os.path.join(dataset_path, data["out_path"])
 
         return cls(**data)
 
@@ -210,6 +210,19 @@ class Translate_config:
         return cls(**data)
 
 
+class API_config:
+    def __init__(
+        self, host: str = '0.0.0.0', port: int = 8011, models: List[Dict[str, any]] = None
+    ):
+        self.host: str = host  # 模型默认使用设备
+        self.port: int = port  # 端口号
+        self.models: List[Dict[str, any]] = models  # 需要加载的所有模型的配置
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, any]):
+        return cls(**data)
+
+
 class Config:
     def __init__(self, config_path: str):
         if not os.path.isfile(config_path) and os.path.isfile("default_config.yml"):
@@ -251,6 +264,9 @@ class Config:
             )
             self.translate_config: Translate_config = Translate_config.from_dict(
                 yaml_config["translate"]
+            )
+            self.api_config: API_config = API_config.from_dict(
+                yaml_config["api"]
             )
 
 

@@ -172,16 +172,18 @@ sil_phonemes_ids = [symbols.index(i) for i in pu_symbols]
 num_tones = num_zh_tones + num_ja_tones + num_en_tones
 
 # language maps
-language_id_map = {"ZH": 0, "JP": 1, "EN": 2}
+language_id_map = {"zh": 0, "ja": 1, "en": 2}
 num_languages = len(language_id_map.keys())
 
 language_tone_start_map = {
-    "ZH": 0,
-    "JP": num_zh_tones,
-    "EN": num_zh_tones + num_ja_tones,
+    "zh": 0,
+    "ja": num_zh_tones,
+    "en": num_zh_tones + num_ja_tones,
 }
+
 
 if __name__ == "__main__":
     a = set(zh_symbols)
     b = set(en_symbols)
     print(sorted(a & b))
+    print(language_tone_start_map)

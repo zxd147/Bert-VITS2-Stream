@@ -5,14 +5,14 @@ https://github.com/fishaudio/Bert-VITS2/releases/tag/1.1.1
 
 import torch
 import commons
-from .text.cleaner import clean_text, clean_text_fix
-from .text import cleaned_text_to_sequence
+from .text.cleaner import text_to_phonemes, clean_text_fix
+from .text import convert_to_ids
 from .text import get_bert, get_bert_fix
 
 
-def get_text(text, language_str, hps, device):
-    norm_text, phone, tone, word2ph = clean_text(text, language_str)
-    phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
+def get_all_bert(text, language_str, hps, device):
+    norm_text, phone, tone, word2ph = text_to_phonemes(text, language_str)
+    phone, tone, language = convert_to_ids(phone, tone, language_str)
 
     if hps.data.add_blank:
         phone = commons.intersperse(phone, 0)
@@ -45,9 +45,9 @@ def get_text(text, language_str, hps, device):
     return bert, ja_bert, phone, tone, language
 
 
-def get_text_fix(text, language_str, hps, device):
+def get_all_bert_fix(text, language_str, hps, device):
     norm_text, phone, tone, word2ph = clean_text_fix(text, language_str)
-    phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
+    phone, tone, language = convert_to_ids(phone, tone, language_str)
 
     if hps.data.add_blank:
         phone = commons.intersperse(phone, 0)
@@ -89,10 +89,10 @@ def infer(
     sid,
     language,
     hps,
-    net_g,
+    model,
     device,
 ):
-    bert, ja_bert, phones, tones, lang_ids = get_text(text, language, hps, device)
+    bert, ja_bert, phones, tones, lang_ids = get_all_bert(text, language, hps, device)
     with torch.no_grad():
         x_tst = phones.to(device).unsqueeze(0)
         tones = tones.to(device).unsqueeze(0)
@@ -103,7 +103,7 @@ def infer(
         del phones
         speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
         audio = (
-            net_g.infer(
+            model.infer(
                 x_tst,
                 x_tst_lengths,
                 speakers,
@@ -135,10 +135,10 @@ def infer_fix(
     sid,
     language,
     hps,
-    net_g,
+    model,
     device,
 ):
-    bert, ja_bert, phones, tones, lang_ids = get_text_fix(text, language, hps, device)
+    bert, ja_bert, phones, tones, lang_ids = get_all_bert_fix(text, language, hps, device)
     with torch.no_grad():
         x_tst = phones.to(device).unsqueeze(0)
         tones = tones.to(device).unsqueeze(0)
@@ -149,7 +149,7 @@ def infer_fix(
         del phones
         speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
         audio = (
-            net_g.infer(
+            model.infer(
                 x_tst,
                 x_tst_lengths,
                 speakers,

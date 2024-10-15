@@ -56,7 +56,8 @@ def markup_language(text: str, target_languages: list = None) -> str:
     return text
 
 
-def split_by_language(text: str, target_languages: list = None) -> list:
+def split_by_language(text: str, target_languages: list = None) -> list:  # 给定的文本 text 中识别并分割出不同语言的段落
+    # 匹配所有可能的标点符号和分隔符，用于分割文本。
     pattern = (
         r"[\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\>\=\?\@\[\]\{\}\\\\\^\_\`"
         r"\！？\。＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」"
@@ -74,6 +75,7 @@ def split_by_language(text: str, target_languages: list = None) -> list:
         if sorted_target_languages in [["en", "zh"], ["en", "ja"], ["en", "ja", "zh"]]:
             new_sentences = []
             for sentence in sentences:
+                # 将输入的文本 text 按照字母（拉丁字母）和非字母（如汉字、日文假名、数字）的边界进行分割
                 new_sentences.extend(split_alpha_nonalpha(sentence))
             sentences = new_sentences
 

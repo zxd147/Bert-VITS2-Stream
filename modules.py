@@ -31,13 +31,13 @@ class LayerNorm(nn.Module):
 
 class ConvReluNorm(nn.Module):
     def __init__(
-        self,
-        in_channels,
-        hidden_channels,
-        out_channels,
-        kernel_size,
-        n_layers,
-        p_dropout,
+            self,
+            in_channels,
+            hidden_channels,
+            out_channels,
+            kernel_size,
+            n_layers,
+            p_dropout,
     ):
         super().__init__()
         self.in_channels = in_channels
@@ -99,7 +99,7 @@ class DDSConv(nn.Module):
         self.norms_1 = nn.ModuleList()
         self.norms_2 = nn.ModuleList()
         for i in range(n_layers):
-            dilation = kernel_size**i
+            dilation = kernel_size ** i
             padding = (kernel_size * dilation - dilation) // 2
             self.convs_sep.append(
                 nn.Conv1d(
@@ -132,13 +132,13 @@ class DDSConv(nn.Module):
 
 class WN(torch.nn.Module):
     def __init__(
-        self,
-        hidden_channels,
-        kernel_size,
-        dilation_rate,
-        n_layers,
-        gin_channels=0,
-        p_dropout=0,
+            self,
+            hidden_channels,
+            kernel_size,
+            dilation_rate,
+            n_layers,
+            gin_channels=0,
+            p_dropout=0,
     ):
         super(WN, self).__init__()
         assert kernel_size % 2 == 1
@@ -160,7 +160,7 @@ class WN(torch.nn.Module):
             self.cond_layer = torch.nn.utils.weight_norm(cond_layer, name="weight")
 
         for i in range(n_layers):
-            dilation = dilation_rate**i
+            dilation = dilation_rate ** i
             padding = int((kernel_size * dilation - dilation) / 2)
             in_layer = torch.nn.Conv1d(
                 hidden_channels,
@@ -193,7 +193,7 @@ class WN(torch.nn.Module):
             x_in = self.in_layers[i](x)
             if g is not None:
                 cond_offset = i * 2 * self.hidden_channels
-                g_l = g[:, cond_offset : cond_offset + 2 * self.hidden_channels, :]
+                g_l = g[:, cond_offset: cond_offset + 2 * self.hidden_channels, :]
             else:
                 g_l = torch.zeros_like(x_in)
 
@@ -204,7 +204,7 @@ class WN(torch.nn.Module):
             if i < self.n_layers - 1:
                 res_acts = res_skip_acts[:, : self.hidden_channels, :]
                 x = (x + res_acts) * x_mask
-                output = output + res_skip_acts[:, self.hidden_channels :, :]
+                output = output + res_skip_acts[:, self.hidden_channels:, :]
             else:
                 output = output + res_skip_acts
         return output * x_mask
@@ -401,15 +401,15 @@ class ElementwiseAffine(nn.Module):
 
 class ResidualCouplingLayer(nn.Module):
     def __init__(
-        self,
-        channels,
-        hidden_channels,
-        kernel_size,
-        dilation_rate,
-        n_layers,
-        p_dropout=0,
-        gin_channels=0,
-        mean_only=False,
+            self,
+            channels,
+            hidden_channels,
+            kernel_size,
+            dilation_rate,
+            n_layers,
+            p_dropout=0,
+            gin_channels=0,
+            mean_only=False,
     ):
         assert channels % 2 == 0, "channels should be divisible by 2"
         super().__init__()
@@ -458,13 +458,13 @@ class ResidualCouplingLayer(nn.Module):
 
 class ConvFlow(nn.Module):
     def __init__(
-        self,
-        in_channels,
-        filter_channels,
-        kernel_size,
-        n_layers,
-        num_bins=10,
-        tail_bound=5.0,
+            self,
+            in_channels,
+            filter_channels,
+            kernel_size,
+            n_layers,
+            num_bins=10,
+            tail_bound=5.0,
     ):
         super().__init__()
         self.in_channels = in_channels
@@ -493,10 +493,10 @@ class ConvFlow(nn.Module):
         h = h.reshape(b, c, -1, t).permute(0, 1, 3, 2)  # [b, cx?, t] -> [b, c, t, ?]
 
         unnormalized_widths = h[..., : self.num_bins] / math.sqrt(self.filter_channels)
-        unnormalized_heights = h[..., self.num_bins : 2 * self.num_bins] / math.sqrt(
+        unnormalized_heights = h[..., self.num_bins: 2 * self.num_bins] / math.sqrt(
             self.filter_channels
         )
-        unnormalized_derivatives = h[..., 2 * self.num_bins :]
+        unnormalized_derivatives = h[..., 2 * self.num_bins:]
 
         x1, logabsdet = piecewise_rational_quadratic_transform(
             x1,
@@ -518,17 +518,17 @@ class ConvFlow(nn.Module):
 
 class TransformerCouplingLayer(nn.Module):
     def __init__(
-        self,
-        channels,
-        hidden_channels,
-        kernel_size,
-        n_layers,
-        n_heads,
-        p_dropout=0,
-        filter_channels=0,
-        mean_only=False,
-        wn_sharing_parameter=None,
-        gin_channels=0,
+            self,
+            channels,
+            hidden_channels,
+            kernel_size,
+            n_layers,
+            n_heads,
+            p_dropout=0,
+            filter_channels=0,
+            mean_only=False,
+            wn_sharing_parameter=None,
+            gin_channels=0,
     ):
         assert channels % 2 == 0, "channels should be divisible by 2"
         super().__init__()

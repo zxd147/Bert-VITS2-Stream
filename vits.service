@@ -1,0 +1,16 @@
+[Unit]
+Description=Bert VITS2 Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/danyow/code/Bert-VITS2
+ExecStart=/bin/bash /home/danyow/code/Bert-VITS2/start_service.sh
+Restart=on-failure
+RestartSec=10
+StandardOutput=file:/var/log/bert_vits/bert_vits.log
+StandardError=file:/var/log/bert_vits/bert_vits.log
+
+[Install]
+WantedBy=multi-user.target

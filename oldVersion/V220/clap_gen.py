@@ -5,7 +5,7 @@ import torch
 import torch.multiprocessing as mp
 from tqdm import tqdm
 
-import utils
+from utils import model_utils
 from config import config
 from .clap_wrapper import get_clap_audio_feature
 import librosa

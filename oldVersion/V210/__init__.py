@@ -4,14 +4,14 @@
 
 import torch
 import commons
-from .text import cleaned_text_to_sequence, get_bert
-from .text.cleaner import clean_text
+from .text import convert_to_ids, get_bert
+from .text.cleaner import text_to_phonemes
 
 
-def get_text(text, language_str, hps, device, style_text=None, style_weight=0.7):
-    # 在此处实现当前版本的get_text
-    norm_text, phone, tone, word2ph = clean_text(text, language_str)
-    phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
+def get_all_bert(text, language_str, hps, device, style_text=None, style_weight=0.7):
+    # 在此处实现当前版本的get_all_bert
+    norm_text, phone, tone, word2ph = text_to_phonemes(text, language_str)
+    phone, tone, language = convert_to_ids(phone, tone, language_str)
 
     if hps.data.add_blank:
         phone = commons.intersperse(phone, 0)
@@ -71,7 +71,7 @@ def infer(
     sid,
     language,
     hps,
-    net_g,
+    model,
     device,
     reference_audio=None,
     emotion=None,
@@ -80,7 +80,7 @@ def infer(
     style_text=None,
     style_weight=0.7,
 ):
-    bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
+    bert, ja_bert, en_bert, phones, tones, lang_ids = get_all_bert(
         text, language, hps, device, style_text, style_weight
     )
     emo = get_emo_(reference_audio, emotion)
@@ -110,7 +110,7 @@ def infer(
         del phones
         speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
         audio = (
-            net_g.infer(
+            model.infer(
                 x_tst,
                 x_tst_lengths,
                 speakers,
@@ -144,7 +144,7 @@ def infer_multilang(
     sid,
     language,
     hps,
-    net_g,
+    model,
     device,
     reference_audio=None,
     emotion=None,
@@ -163,7 +163,7 @@ def infer_multilang(
             temp_phones,
             temp_tones,
             temp_lang_ids,
-        ) = get_text(txt, lang, hps, device)
+        ) = get_all_bert(txt, lang, hps, device)
         if skip_start:
             temp_bert = temp_bert[:, 1:]
             temp_ja_bert = temp_ja_bert[:, 1:]
@@ -202,7 +202,7 @@ def infer_multilang(
         del phones
         speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
         audio = (
-            net_g.infer(
+            model.infer(
                 x_tst,
                 x_tst_lengths,
                 speakers,

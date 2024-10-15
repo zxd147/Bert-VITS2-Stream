@@ -45,5 +45,5 @@ def get_clap_text_feature(text, device=config.bert_gen_config.device):
         )
     with torch.no_grad():
         inputs = processor(text=text, return_tensors="pt").to(device)
-        emb = models[device].get_text_features(**inputs)
+        emb = models[device].get_all_bert_features(**inputs)
     return emb.T

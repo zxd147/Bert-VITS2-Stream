@@ -4,14 +4,14 @@
 
 import torch
 import commons
-from .text import cleaned_text_to_sequence, get_bert
-from .text.cleaner import clean_text
+from .text import convert_to_ids, get_bert
+from .text.cleaner import text_to_phonemes
 
 
-def get_text(text, language_str, hps, device):
-    # 在此处实现当前版本的get_text
-    norm_text, phone, tone, word2ph = clean_text(text, language_str)
-    phone, tone, language = cleaned_text_to_sequence(phone, tone, language_str)
+def get_all_bert(text, language_str, hps, device):
+    # 在此处实现当前版本的get_all_bert
+    norm_text, phone, tone, word2ph = text_to_phonemes(text, language_str)
+    phone, tone, language = convert_to_ids(phone, tone, language_str)
 
     if hps.data.add_blank:
         phone = commons.intersperse(phone, 0)
@@ -58,10 +58,10 @@ def infer(
     sid,
     language,
     hps,
-    net_g,
+    model,
     device,
 ):
-    bert, ja_bert, en_bert, phones, tones, lang_ids = get_text(
+    bert, ja_bert, en_bert, phones, tones, lang_ids = get_all_bert(
         text, language, hps, device
     )
     with torch.no_grad():
@@ -75,7 +75,7 @@ def infer(
         del phones
         speakers = torch.LongTensor([hps.data.spk2id[sid]]).to(device)
         audio = (
-            net_g.infer(
+            model.infer(
                 x_tst,
                 x_tst_lengths,
                 speakers,

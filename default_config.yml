@@ -17,9 +17,9 @@ resample:
   sampling_rate: 44100
   # 音频文件输入路径，重采样会将该路径下所有.wav音频文件重采样
   # 请填入相对于datasetPath的相对路径
-  in_dir: "audios/raw" # 相对于根目录的路径为 /datasetPath/in_dir
+  in_path: "audios/raw" # 相对于根目录的路径为 /datasetPath/in_path
   # 音频文件重采样后输出路径
-  out_dir: "audios/wavs"
+  out_path: "audios/wavs"
 
 
 # preprocess_text 数据集预处理相关配置

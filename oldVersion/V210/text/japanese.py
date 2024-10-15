@@ -225,7 +225,7 @@ def japanese_convert_alpha_symbols_to_words(text: str) -> str:
     return "".join([_ALPHASYMBOL_YOMI.get(ch, ch) for ch in text.lower()])
 
 
-def japanese_text_to_phonemes(text: str) -> str:
+def japanese_s(text: str) -> str:
     """Convert Japanese text to phonemes."""
     res = unicodedata.normalize("NFKC", text)
     res = japanese_convert_numbers_to_words(res)

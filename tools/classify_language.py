@@ -6,7 +6,7 @@ try:
     LANGUAGE_IDENTIFICATION_LIBRARY = (
         config.webui_config.language_identification_library
     )
-except:
+except Exception:
     LANGUAGE_IDENTIFICATION_LIBRARY = "langid"
 
 module = LANGUAGE_IDENTIFICATION_LIBRARY.lower()
@@ -153,7 +153,7 @@ def classify_zh_ja(text: str) -> str:
             next_char = text[idx + 1] if idx + 1 < len(text) else None
 
             if next_char and (
-                0x3040 <= ord(next_char) <= 0x309F or 0x30A0 <= ord(next_char) <= 0x30FF
+                    0x3040 <= ord(next_char) <= 0x309F or 0x30A0 <= ord(next_char) <= 0x30FF
             ):
                 return "ja"
 

@@ -1,10 +1,10 @@
-from . import chinese, japanese, cleaned_text_to_sequence
+from . import chinese, japanese, convert_to_ids
 
 
 language_module_map = {"ZH": chinese, "JP": japanese}
 
 
-def clean_text(text, language):
+def text_to_phonemes(text, language):
     language_module = language_module_map[language]
     norm_text = language_module.text_normalize(text)
     phones, tones, word2ph = language_module.g2p(norm_text)
@@ -20,8 +20,8 @@ def clean_text_bert(text, language):
 
 
 def text_to_sequence(text, language):
-    norm_text, phones, tones, word2ph = clean_text(text, language)
-    return cleaned_text_to_sequence(phones, tones, language)
+    norm_text, phones, tones, word2ph = text_to_phonemes(text, language)
+    return convert_to_ids(phones, tones, language)
 
 
 if __name__ == "__main__":

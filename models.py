@@ -1043,7 +1043,9 @@ class SynthesizerTrn(nn.Module):
         # x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths, tone, language, bert)
         # g = self.gst(y)
         if self.n_speakers > 0:
-            g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
+            # 嵌入层（embedding layer），用于将输入 sid 转换为一个高维空间中的向量
+            # unsqueeze 是 PyTorch 中的一个方法，用于在指定位置(最后一个维度)增加一个维度。原始的 [b, h] 形状变为 [b, h, 1]。
+            g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1],
         else:
             g = self.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
         x, m_p, logs_p, x_mask = self.enc_p(
