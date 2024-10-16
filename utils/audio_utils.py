@@ -72,7 +72,7 @@ def torch_gc():
         torch.cuda.ipc_collect()  # 收集CUDA内存碎片
 
 
-def write_audio_data(audio_data, default_samplerate, sampling_rate, audio_format, write_mode, normalize=True):
+def write_audio_data(audio_data, default_samplerate, sampling_rate, audio_format, write_mode, normalize=True, read_stream=True):
     audio_data = audio_data.astype(np.float32)
     audio_format = audio_format.replace('.', '')
     # 如果当前采样率与默认采样率不一致，进行重采样
@@ -102,7 +102,7 @@ def write_audio_data(audio_data, default_samplerate, sampling_rate, audio_format
             if audio_format not in supported_formats:
                 raise ValueError("Unsupported file format")
             elif audio_format == 'bytes':
-                if "stream" in write_mode:
+                if read_stream:
                     # 处理 bytes 格式
                     buffer.write(audio_data.tobytes())
                     buffer.seek(0)  # 读取前，确保缓冲区指针在开始位置
@@ -114,8 +114,8 @@ def write_audio_data(audio_data, default_samplerate, sampling_rate, audio_format
                     audio_content = buffer.getvalue()
                     yield audio_content
             else:
-                if all(keyword in write_mode for keyword in ["stream", "ffmpeg"]):
-                # if  'stream' in write_mode and'ffmpeg' in write_mode:
+                # "ffmpeg_with_stream", "ffmpeg_without_stream_with_stream"
+                if read_stream and 'ffmpeg' in write_mode:
                     ffmpeg_args = write_with_ffmpeg(audio_data, sampling_rate, audio_format)
                     # 使用子进程调用 ffmpeg
                     # logger.info(f"process_args: {ffmpeg_args}")
@@ -144,7 +144,7 @@ def write_audio_data(audio_data, default_samplerate, sampling_rate, audio_format
                     # audio_content = buffer.getvalue()
                     # yield audio_content
                 # if all(keyword in write_mode for keyword in ["stream", "soundfile"]):
-                elif 'stream' in write_mode and 'soundfile' in write_mode:
+                elif read_stream and 'soundfile' in write_mode:
                     with ThreadPoolExecutor(max_workers=10) as executor:  # 限制最大线程数
                         future = executor.submit(write_with_soundfile, buffer, audio_data, sampling_rate, audio_format)
                         future.result()  # 等待线程完成
@@ -158,12 +158,14 @@ def write_audio_data(audio_data, default_samplerate, sampling_rate, audio_format
                 else:
                     with ThreadPoolExecutor(max_workers=10) as executor:  # 限制最大线程数
                         if 'soundfile' in write_mode:
-                            future = executor.submit(write_with_soundfile, buffer, audio_data, sampling_rate, audio_format)
+                            future = executor.submit(write_with_soundfile, buffer, audio_data, sampling_rate,
+                                                     audio_format)
                             future.result()  # 等待线程完成
                         else:
                             args_queue = Queue()
                             pack_ogg_thread = threading.Thread(target=write_with_ffmpeg,
-                                                               args=(audio_data, sampling_rate, audio_format, args_queue))
+                                                               args=(
+                                                               audio_data, sampling_rate, audio_format, args_queue))
                             pack_ogg_thread.start()
                             pack_ogg_thread.join()
                             ffmpeg_args = args_queue.get()

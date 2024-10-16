@@ -159,14 +159,17 @@ def refresh_models(speaker, language):
 
 def get_audio_data(generator, default_samplerate, audio_samplerate, audio_format, write_mode):
     status, audio_data = list(generator)[0]
-    audio_contents = write_audio_data(audio_data, default_samplerate, audio_samplerate, audio_format, write_mode)
+    read_stream = False
+    # write_mode += 'without_stream'
+    audio_contents = write_audio_data(audio_data, default_samplerate, audio_samplerate, audio_format, write_mode, read_stream)
     audio_content = list(audio_contents)[0]
     return status, audio_content
 
 
 def stream_get_audio_data(generator, default_samplerate, audio_samplerate, audio_format, write_mode):
     start = time.process_time()
-    write_mode += 'with_stream'
+    read_stream = False if 'without_stream' in write_mode else True
+    # write_mode += 'with_stream'
     target_len = 5 * 1024 * 1024  # 5M
     # 预设目标总长度（这里设置为 5MB）
     large_len = b'\xff\xff\xff\xff'
@@ -176,7 +179,7 @@ def stream_get_audio_data(generator, default_samplerate, audio_samplerate, audio
         vits_logger.debug(f'---write_audio_data: {index}...')
         audio_format = '.bytes' if audio_format == '.wav' and index != 0 else audio_format
         # wav文件头为44位，每个文件头固定了数据块大小, raw不带文件头
-        audio_contents = write_audio_data(audio_data, default_samplerate, audio_samplerate, audio_format, write_mode)
+        audio_contents = write_audio_data(audio_data, default_samplerate, audio_samplerate, audio_format, write_mode, read_stream)
         for idx, audio_content in enumerate(audio_contents):
             # vits_logger.debug(f'===write_audio_data: {idx}...')
             # if audio_format == '.wav' and write_mode != 'ffmpeg':
