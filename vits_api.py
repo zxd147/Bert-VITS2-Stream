@@ -159,7 +159,6 @@ def refresh_models(speaker, language):
 
 def get_audio_data(generator, default_samplerate, audio_samplerate, audio_format, write_mode):
     status, audio_data = list(generator)[0]
-    write_mode += 'without_stream'
     audio_contents = write_audio_data(audio_data, default_samplerate, audio_samplerate, audio_format, write_mode)
     audio_content = list(audio_contents)[0]
     return status, audio_content
@@ -167,6 +166,7 @@ def get_audio_data(generator, default_samplerate, audio_samplerate, audio_format
 
 def stream_get_audio_data(generator, default_samplerate, audio_samplerate, audio_format, write_mode):
     start = time.process_time()
+    write_mode += 'with_stream'
     target_len = 5 * 1024 * 1024  # 5M
     # 预设目标总长度（这里设置为 5MB）
     large_len = b'\xff\xff\xff\xff'
