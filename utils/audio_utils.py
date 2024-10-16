@@ -106,7 +106,6 @@ def write_audio_data(audio_data, default_samplerate, sampling_rate, audio_format
                 if read_stream:
                     buffer.write(audio_data.tobytes())
                     buffer.seek(0)  # 读取前，确保缓冲区指针在开始位置
-                    # yield from buffer.read(1024)
                     for audio_content in iter(lambda: buffer.read(1024), b''):
                         yield audio_content
                 else:
