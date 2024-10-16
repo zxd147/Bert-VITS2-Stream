@@ -102,13 +102,14 @@ def write_audio_data(audio_data, default_samplerate, sampling_rate, audio_format
             if audio_format not in supported_formats:
                 raise ValueError("Unsupported file format")
             elif audio_format == 'bytes':
+                # 处理 bytes 格式
                 if read_stream:
-                    # 处理 bytes 格式
                     buffer.write(audio_data.tobytes())
                     buffer.seek(0)  # 读取前，确保缓冲区指针在开始位置
-                    yield from buffer.read(1024)
+                    # yield from buffer.read(1024)
+                    for audio_content in iter(lambda: buffer.read(1024), b''):
+                        yield audio_content
                 else:
-                    # 处理 bytes 格式
                     buffer.write(audio_data.tobytes())
                     buffer.seek(0)  # 读取前，确保缓冲区指针在开始位置
                     audio_content = buffer.getvalue()
@@ -125,15 +126,17 @@ def write_audio_data(audio_data, default_samplerate, sampling_rate, audio_format
                     audio_bytes = audio_data.tobytes()
                     process.stdin.write(audio_bytes)  # 将音频数据写入子进程的标准输入
                     process.stdin.close()  # 关闭标准输入以告知 ffmpeg 输入结束
-                    # 读取输出数据并流式生成, iter 函数将 process.stdout 包装为一个迭代器
-                    for audio_content in iter(lambda: process.stdout.read(1024), b''):
-                        yield audio_content
-                    # 确保进程正确结束并获取返回码
-                    process.stdout.close()
-                    process.stderr.close()
-                    return_code = process.wait()  # 等待进程结束并返回返回码
-                    if return_code != 0:
-                        raise RuntimeError(f"FFmpeg process exited with code {return_code}")
+                    try:
+                        # 读取输出数据并流式生成, iter 函数将 process.stdout 包装为一个迭代器
+                        for audio_content in iter(lambda: process.stdout.read(1024), b''):
+                            yield audio_content  # 确保返回字节数据
+                    finally:
+                        process.stdout.close()
+                        process.stderr.close()
+                        return_code = process.wait()  # 等待进程结束并返回返回码
+                        if return_code != 0:
+                            # 处理错误
+                            raise RuntimeError(f"Process exited with code {return_code}")
                     # out, err = process.communicate(input=audio_bytes)
                     # # 写入缓冲区
                     # if process.returncode == 0:
