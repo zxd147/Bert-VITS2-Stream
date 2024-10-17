@@ -36,7 +36,7 @@ codec_format_map = {
     'wma': {'codec': 'wmav2', 'format': 'asf'},  # wma或者asf
     'm4a': {'codec': 'aac', 'format': 'mp4'},
     'opus': {'codec': 'libopus', 'format': 'ogg'},  # Opus 格式
-    'aiff': {'codec': 'pcm_s16be', 'format': 'aiff'},  # AIFF 格式
+    'aiff': {'codec': 'pcm_s16be', 'format': 'aiff'},  # AIFF 格式, usually use at Apple.
     # You can use the format ipod to export to m4a (see original answer) ['matroska', 'mp4', 'ipod']
     'raw': {'codec': 'pcm_s16le', 'format': 'raw'},
     'bytes': {'codec': 'pcm_s16le', 'format': 'raw'},
