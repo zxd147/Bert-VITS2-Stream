@@ -243,7 +243,7 @@ class GenerateRequest(BaseModel):
 class GenerateResponse(BaseModel):
     code: int
     sno: Optional[Union[int, str]] = None
-    messages: Optional[str]
+    messages: str
     audio_path: Optional[str] = None  # 音频文件路径
     audio_base64: Optional[str] = None  # 音频 base64 编码
 
@@ -468,7 +468,9 @@ async def get_generate_audio(
                 data_url = get_data_url(audio_format)
                 audio_base64 = base64.b64encode(audio_content).decode('utf-8')
                 audio_base64 = f'{data_url},{audio_base64}'
-
+                audio_base64_log = audio_base64[:30] + "..."  # 只记录前30个字符
+                if not return_base64:
+                    audio_base64 = audio_base64_log
             else:
                 # 流式生成
                 stream_generator = await run_in_threadpool(stream_get_audio_data, generator, default_samplerate,
