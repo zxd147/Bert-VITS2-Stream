@@ -16,7 +16,7 @@ import torch
 from scipy.signal import resample
 
 # 支持的音频格式
-supported_formats = {'wav', 'mp3', 'pcm', 'flac', 'ogg', 'aac', 'wma', 'm4a', 'raw', 'bytes'}
+supported_formats = {'wav', 'mp3', 'pcm', 'flac', 'ogg', 'aac', 'wma', 'm4a', 'raw', 'bytes', 'opus', 'aiff'}
 # 设置输入格式的映射
 subtype_format_map = {
     np.float32: 'f32le',  # 输入格式为 32 位浮点小端格式 PCM
@@ -35,6 +35,8 @@ codec_format_map = {
     'aac': {'codec': 'aac', 'format': 'adts'},
     'wma': {'codec': 'wmav2', 'format': 'asf'},  # wma或者asf
     'm4a': {'codec': 'aac', 'format': 'mp4'},
+    'opus': {'codec': 'libopus', 'format': 'ogg'},  # Opus 格式
+    'aiff': {'codec': 'pcm_s16be', 'format': 'aiff'},  # AIFF 格式
     # You can use the format ipod to export to m4a (see original answer) ['matroska', 'mp4', 'ipod']
     'raw': {'codec': 'pcm_s16le', 'format': 'raw'},
     'bytes': {'codec': 'pcm_s16le', 'format': 'raw'},
@@ -51,6 +53,8 @@ mime_types_map = {
     'aac': 'audio/aac',
     'wma': 'audio/wma',  # WMA格式的MIME类型, 'x-ms-wma'
     'm4a': 'audio/m4a',  # M4A格式的MIME类型
+    'opus': 'audio/opus',  # Opus格式的MIME类型
+    'aiff': 'audio/aiff',  # AIFF格式的MIME类型
     'raw': 'audio/raw',  # PCM格式通常使用audio/pcm，但具体MIME类型可能取决于PCM数据的字节序和位深 ['pcm', 'raw']
     'bytes': 'audio/pcm',  # 通常PCM格式的MIME类型
 }
@@ -218,7 +222,7 @@ def write_with_soundfile(buffer, audio_data, sampling_rate, audio_format):
     elif audio_format in ['pcm', 'raw']:
         sf.write(buffer, audio_data, sampling_rate, format='raw', subtype=subtype)
     # pydub 库背后实际使用 ffmpeg 来执行实际的格式转换和处理工作。
-    elif audio_format in ['wav', 'mp3', 'aac', 'wma', 'm4a', '...']:  # 使用列表后续可扩展
+    elif audio_format in ['wav', 'mp3', 'aac', 'wma', 'm4a', 'opus', 'aiff', '...']:  # 使用列表后续可扩展
         audio = pydub.AudioSegment(audio_data.tobytes(), sample_width=2, frame_rate=sampling_rate, channels=1)
         audio.export(buffer, format=out_format, codec=codec, bitrate="192k")
     elif audio_format == 'bytes':
