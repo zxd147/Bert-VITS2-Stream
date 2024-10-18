@@ -91,7 +91,7 @@ def gradio_infer(text, speaker, language, rate, sdp, scale, noise, length):
     stream = False  # Gradio的web网页不支持流式哦
     device_map, models_map, hps_map = get_models(api_config, web_speaker.value, web_language.value)
     generator = generate(text, speaker, language, stream, rate, hps_map,
-                                    models_map, device_map, sdp, scale, noise, length)
+                         models_map, device_map, sdp, scale, noise, length)
     status, audio_concat = list(generator)[0]
     audio_concat = (audio_concat / np.abs(audio_concat).max() * 32767).astype(np.int16)
     final_audio = (rate, audio_concat)

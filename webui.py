@@ -44,8 +44,6 @@ def generate_audio(
         length_scale,
         speaker,
         language,
-        reference_audio,
-        emotion,
         style_text,
         style_weight
 ):
@@ -316,8 +314,8 @@ def tts_fn(
     if style_text == "":
         style_text = None
     if prompt_mode == "Audio prompt":
-        if reference_audio == None:
-            return ("Invalid audio prompt", None)
+        if reference_audio is None:
+            return "Invalid audio prompt", None
         else:
             reference_audio = load_audio(reference_audio)[1]
     else:
