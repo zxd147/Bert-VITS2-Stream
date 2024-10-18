@@ -18,7 +18,6 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi import Query
 from fastapi.responses import JSONResponse, HTMLResponse, StreamingResponse
-from flask import Response
 from pydantic import BaseModel, Field, confloat
 
 from config import config
@@ -172,8 +171,8 @@ def stream_get_audio_data(generator, default_samplerate, audio_samplerate, audio
     # write_mode += 'with_stream'
     target_len = 5 * 1024 * 1024  # 5M
     # 预设目标总长度（这里设置为 5MB）
-    large_len = b'\xff\xff\xff\xff'
-    file_len = (target_len - 8).to_bytes(4, 'little')
+    large_len = b'\xff\xff\xff\xff'  # 预设一个无限大的文件大小
+    file_len = (target_len - 8).to_bytes(4, 'little')  # 4位小端序
     data_len = (target_len - 44).to_bytes(4, 'little')
     for index, audio_data in enumerate(generator):
         vits_logger.debug(f'---write_audio_data: {index}...')
@@ -517,6 +516,6 @@ if __name__ == "__main__":
     init_app()
     host = config.api_config.host
     port = config.api_config.port
-    uvicorn.run(vits_app, host=host, port=8031)
+    uvicorn.run(vits_app, host=host, port=8032)
 
 
