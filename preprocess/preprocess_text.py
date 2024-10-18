@@ -7,6 +7,7 @@ from typing import Optional
 import click
 from tqdm import tqdm
 
+os.chdir('../')
 from config import config
 from text.cleaner import text_to_phonemes
 

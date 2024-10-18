@@ -7,6 +7,7 @@ import torch
 import whisper
 import yaml
 
+os.chdir('../')
 from config import Config
 
 yml_path = 'config.yml'

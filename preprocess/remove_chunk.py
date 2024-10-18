@@ -1,5 +1,6 @@
 import os
 
+os.chdir('../')
 from pydub import AudioSegment
 
 

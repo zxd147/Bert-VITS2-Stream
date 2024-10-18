@@ -6,6 +6,7 @@ import librosa
 import soundfile
 from tqdm import tqdm
 
+os.chdir('../')
 from config import config
 
 

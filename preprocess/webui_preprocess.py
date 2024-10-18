@@ -3,6 +3,7 @@ import os
 import shutil
 import subprocess
 
+os.chdir('../')
 import gradio as gr
 
 

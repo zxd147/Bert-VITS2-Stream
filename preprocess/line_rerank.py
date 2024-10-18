@@ -1,7 +1,9 @@
 import re
+import os
 
 import click
 
+os.chdir('../')
 from config import Config
 
 # 配置文件路径

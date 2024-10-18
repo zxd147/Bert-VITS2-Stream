@@ -2,6 +2,7 @@ import os
 import random
 import re
 
+os.chdir('../')
 from config import Config
 
 yml_path = 'config.yml'

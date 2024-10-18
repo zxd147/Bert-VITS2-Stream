@@ -6,6 +6,7 @@ import torch
 import torch.multiprocessing as mp
 from tqdm import tqdm
 
+os.chdir('../')
 import commons
 from config import config
 from text import check_bert_models, convert_to_ids, get_bert

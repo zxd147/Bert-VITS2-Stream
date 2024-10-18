@@ -8,6 +8,7 @@ import yaml
 from config import Config
 from tools.slicer import Slicer
 
+os.chdir('../')
 yml_path = 'config.yml'
 config = Config(yml_path)
 with open(yml_path, mode="r", encoding="utf-8") as f:
