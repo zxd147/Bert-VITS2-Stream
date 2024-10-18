@@ -128,19 +128,39 @@ def write_audio_data(audio_data, default_samplerate, sampling_rate, audio_format
                                                stderr=subprocess.PIPE)
                     # 将 audio_data 转换为字节流
                     audio_bytes = audio_data.tobytes()
-                    process.stdin.write(audio_bytes)  # 将音频数据写入子进程的标准输入
-                    process.stdin.close()  # 关闭标准输入以告知 ffmpeg 输入结束
+
+                    def write_input(audio_chunk):
+                        try:
+                            process.stdin.write(audio_chunk)
+                        finally:
+                            process.stdin.close()
+
+                    def stream_output(ffmpeg_process, chunk_size=1024):
+                        while True:
+                            audio = ffmpeg_process.stdout.read(chunk_size)
+                            if not audio:
+                                break
+                            yield audio
+                    input_thread = threading.Thread(target=write_input, args=audio_bytes)
+                    input_thread.start()
                     try:
-                        # 读取输出数据并流式生成, iter 函数将 process.stdout 包装为一个迭代器
-                        for audio_content in iter(lambda: process.stdout.read(1024), b''):
-                            yield audio_content  # 确保返回字节数据
+                        for audio_data in stream_output(process):
+                            yield audio_data
                     finally:
                         process.stdout.close()
                         process.stderr.close()
-                        return_code = process.wait()  # 等待进程结束并返回返回码
-                        if return_code != 0:
-                            # 处理错误
-                            raise RuntimeError(f"Process exited with code {return_code}")
+                        process.wait()
+                        input_thread.join()
+                    process.wait()  # 等待进程完成
+                    # 检查错误信息
+                    if process.returncode != 0:
+                        error_data = process.stderr.read().decode()
+                        raise RuntimeError(f'FFmpeg error: {error_data}')
+                    # try:
+                    #     # 读取输出数据并流式生成, iter 函数将 process.stdout 包装为一个迭代器
+                    #     for audio_content in iter(lambda: process.stdout.read(1024), b''):
+                    #         yield audio_content  # 确保返回字节数据
+
                     # out, err = process.communicate(input=audio_bytes)
                     # # 写入缓冲区
                     # if process.returncode == 0:
@@ -184,6 +204,11 @@ def write_audio_data(audio_data, default_samplerate, sampling_rate, audio_format
                             # 将 audio_data 转换为字节流
                             audio_bytes = audio_data.tobytes()
                             audio_content, stderr = process.communicate(input=audio_bytes)
+                            # # 读取输出
+                            # output_data = process.stdout.read()
+                            # process.stdout.close()
+                            # # 等待输入线程完成
+                            # input_thread.join()
                             process.stdout.close()  # 确保关闭标准输出流
                             process.stderr.close()
                             yield audio_content  # 返回所有输出数据
