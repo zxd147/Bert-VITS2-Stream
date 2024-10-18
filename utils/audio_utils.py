@@ -1,4 +1,5 @@
 import gc
+import os
 import subprocess
 import threading
 import time
@@ -76,7 +77,7 @@ def torch_gc():
         torch.cuda.ipc_collect()  # 收集CUDA内存碎片
 
 
-def write_audio_data(audio_data, default_samplerate, sampling_rate, audio_format, write_mode, normalize=True, read_stream=True):
+def write_audio_data(audio_data, default_samplerate, sampling_rate, audio_format, write_mode, read_stream, normalize=True):
     audio_data = audio_data.astype(np.float32)
     audio_format = audio_format.replace('.', '')
     # 如果当前采样率与默认采样率不一致，进行重采样
@@ -167,6 +168,9 @@ def write_audio_data(audio_data, default_samplerate, sampling_rate, audio_format
                             future = executor.submit(write_with_soundfile, buffer, audio_data, sampling_rate,
                                                      audio_format)
                             future.result()  # 等待线程完成
+                            buffer.seek(0)  # 读取前，确保缓冲区指针在开始位置
+                            audio_content = buffer.getvalue()
+                            yield audio_content
                         else:
                             args_queue = Queue()
                             pack_ogg_thread = threading.Thread(target=write_with_ffmpeg,
@@ -179,19 +183,30 @@ def write_audio_data(audio_data, default_samplerate, sampling_rate, audio_format
                                                        stderr=subprocess.PIPE)
                             # 将 audio_data 转换为字节流
                             audio_bytes = audio_data.tobytes()
-                            out, err = process.communicate(input=audio_bytes)
-                            # 写入缓冲区
-                            if process.returncode == 0:
-                                buffer.write(out)
-                            else:
-                                logger.error(f"Error occurred: {err.decode()}")
-                        buffer.seek(0)  # 读取前，确保缓冲区指针在开始位置
-                        audio_content = buffer.getvalue()
+                            audio_content, stderr = process.communicate(input=audio_bytes)
+                            process.stdout.close()  # 确保关闭标准输出流
+                            process.stderr.close()
+                            yield audio_content  # 返回所有输出数据
+                            process.wait()  # 等待进程完成
+                            # 检查错误信息
+                            if process.returncode != 0:
+                                error_data = process.stderr.read().decode()
+                                raise RuntimeError(f'FFmpeg error: {error_data}')
+
+                            # # 写入缓冲区
+                            # if process.returncode == 0:
+                            #     buffer.write(out)
+                            # else:
+                            #     logger.error(f"Error occurred: {err.decode()}")
+                        # buffer.seek(0)  # 读取前，确保缓冲区指针在开始位置
+                        # audio_content = buffer.getvalue()
                         # buffer.truncate(0)  # BytesIO 的实例在创建时默认是空的
                         # buffer.seek(0)
                         # # 不需要显式调用 buffer.close()
                         # buffer.close()  # 关闭对象
-                        yield audio_content
+                        # yield audio_content
+                        end = time.process_time()
+                        logger.debug(f"time_all: {end - start}")
             end = time.process_time()
             logger.debug(f"write_mode: {write_mode}, process_time: {end - start}")
         except RuntimeError as e:
@@ -242,6 +257,7 @@ def write_with_ffmpeg(audio_data, sampling_rate, audio_format, args_queue=None):
     # audio_data_dtype = audio_data.dtype
     # input_format = subtype_format_map.get(np.dtype(audio_data_dtype), 'f32le')
     _, input_format = get_subtype_format(audio_data)
+    os.environ['FFMPEG_BUFFER_SIZE'] = str(1024 * 1024 * 3)  # 设置为1MB
     # 设置 ffmpeg 的输入参数
     process_args = [
         'ffmpeg',
