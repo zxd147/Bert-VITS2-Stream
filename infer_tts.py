@@ -89,7 +89,7 @@ def process_text(ori_text):
 
 def gradio_infer(text, speaker, language, rate, sdp, scale, noise, length):
     stream = False  # Gradio的web网页不支持流式哦
-    device_map, models_map, hps_map = get_models(api_config, web_speaker.value, web_language.value)
+    device_map, models_map, hps_map = get_models(models, speaker, language)
     generator = generate(text, speaker, language, stream, rate, hps_map,
                          models_map, device_map, sdp, scale, noise, length)
     status, audio_concat = list(generator)[0]
@@ -198,48 +198,44 @@ def go_infer(sentence, speaker, language, sampling_rate, hps_map, models_map, de
 
 # #Gradio UI 调试部分
 if __name__ == "__main__":
-    web_device = config.webui_config.device
-    web_config_path = config.webui_config.config_path
-    webui_hps = get_hparams_from_file(web_config_path)
-    api_config = config.api_config.models
-    web_sampling_rate = webui_hps.data.sampling_rate
-    web_model_path = config.webui_config.model
-    web_model = get_model(model_path=web_model_path, device=web_device, hps=webui_hps)
-    num_speakers = web_model.n_speakers
-    speaker_ids = webui_hps.data.spk2id
-    speakers = list(speaker_ids.keys())
-    languages = ["zh", "ja", "en", "mix", "auto"]
     with gr.Blocks() as app:
         with gr.Row():
             with gr.Column():
+                all_speakers = ["jt", "huang", "li"]
+                all_languages = ["zh", "ja", "en", "mix", "auto"]
+                web_device = config.webui_config.device
+                web_config_path = config.webui_config.config_path
+                web_hps = get_hparams_from_file(web_config_path)
+                models = config.webui_config.models
+                web_model_path = config.webui_config.model
+                web_model = get_model(model_path=web_model_path, device=web_device, hps=web_hps)
+                num_speakers = web_model.n_speakers
+                speaker_ids = web_hps.data.spk2id
                 web_text = gr.TextArea(label="输入文本内容")
-                web_speaker = gr.Dropdown(choices=speakers, value=speakers[0], label="Speaker")
-                web_language = gr.Dropdown(choices=languages, value=languages[0], label="Language")
+                web_speaker = gr.Dropdown(choices=all_speakers, value=all_speakers[0], label="Speaker")
+                web_language = gr.Dropdown(choices=all_languages, value=all_languages[0], label="Language")
                 web_sdp_ratio = gr.Slider(minimum=0, maximum=1, value=0.5, step=0.1, label="SDP Ratio")
                 web_noise_scale = gr.Slider(minimum=0.1, maximum=2, value=0.6, step=0.1, label="Noise")
                 web_noise_scale_w = gr.Slider(minimum=0.1, maximum=2, value=0.9, step=0.1, label="Noise_W")
                 web_length_scale = gr.Slider(minimum=0.1, maximum=2, value=1.0, step=0.1, label="Length")
-                web_sampling_rate = gr.Slider(minimum=10000, maximum=50000, value=web_sampling_rate, step=100,
+                web_sampling_rate = gr.Slider(minimum=10000, maximum=50000, value=44100, step=100,
                                               label="sampling_rate")
                 btn = gr.Button("生成音频！", variant="primary")
                 # 创建State组件来存储模型字典和其他数据
-                hps_dict = gr.State()
-                models_dict = gr.State()
-                device_dict = gr.State()
                 explain_image = gr.Image(label="参数解释信息", show_label=True,
                                          value=os.path.abspath("./temp/img/参数说明.png"))
             with gr.Column():
                 text_output = gr.Textbox(label="状态信息")
                 audio_output = gr.Audio(type="numpy", label="输出音频")
-                # with gr.Row():
-                #     Kami_sato_Ayaka_image = gr.Image(label="神里绫华", show_label=True,
-                #                                      value=os.path.abspath("./temp/img/神里绫华.png"))
-                #     Yuyu_image = gr.Image(label="yuyu", show_label=True,
-                #                           value=os.path.abspath("./temp/img/yuyu.png"))
-                #     Na_xi_da_image = gr.Image(label="纳西妲", show_label=True,
-                #                               value=os.path.abspath("./temp/img/纳西妲.png"))
-                #     Xiao_Gong_image = gr.Image(label="宵宫", show_label=True,
-                #                                value=os.path.abspath("./temp/img/宵宫.png"))
+                with gr.Row():
+                    Kami_sato_Ayaka_image = gr.Image(label="神里绫华", show_label=True,
+                                                     value=os.path.abspath("./temp/img/神里绫华.png"))
+                    Yuyu_image = gr.Image(label="yuyu", show_label=True,
+                                          value=os.path.abspath("./temp/img/yuyu.png"))
+                    Na_xi_da_image = gr.Image(label="纳西妲", show_label=True,
+                                              value=os.path.abspath("./temp/img/纳西妲.png"))
+                    Xiao_Gong_image = gr.Image(label="宵宫", show_label=True,
+                                               value=os.path.abspath("./temp/img/宵宫.png"))
         btn.click(
             gradio_infer,
             inputs=[web_text, web_speaker, web_language, web_sampling_rate, web_sdp_ratio, web_noise_scale,
@@ -247,3 +243,5 @@ if __name__ == "__main__":
             outputs=[text_output, audio_output])
     logger.info("推理页面已开启!")
     app.launch(share=config.webui_config.share, server_name='0.0.0.0', server_port=config.webui_config.port)
+
+

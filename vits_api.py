@@ -411,7 +411,7 @@ async def get_generate_audio(
         audio_format: str = ".wav",  # 默认值 ".wav"
         audio_path: Optional[str] = '/mnt/digital_service/audio',  # 音频路径或目录
         audio_samplerate: int = 44100,
-        write_mode: Literal['ffmpeg', 'package'] = 'package',
+        write_mode: Literal['ffmpeg', 'package', 'ffmpeg_without_stream', 'package_without_stream'] = 'package',
         return_base64: Optional[bool] = None
 ):
     # try:
@@ -516,6 +516,6 @@ if __name__ == "__main__":
     init_app()
     host = config.api_config.host
     port = config.api_config.port
-    uvicorn.run(vits_app, host=host, port=8031)
+    uvicorn.run(vits_app, host=host, port=8032)
 
 

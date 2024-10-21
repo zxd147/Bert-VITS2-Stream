@@ -289,9 +289,7 @@ def process_text(
                 speaker,
                 language,
                 reference_audio,
-                emotion,
-                style_text,
-                style_weight
+                emotion
             )
         )
     return audio_list
