@@ -516,6 +516,6 @@ if __name__ == "__main__":
     init_app()
     host = config.api_config.host
     port = config.api_config.port
-    uvicorn.run(vits_app, host=host, port=8032)
+    uvicorn.run(vits_app, host=host, port=8031)
 
 
