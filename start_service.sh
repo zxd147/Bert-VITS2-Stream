@@ -21,7 +21,7 @@ fi
 
 # 启动服务并将输出重定向到 output.log
 cd /home/zxd/code/TTS/Bert-VITS2
-nohup /home/zxd/.conda/envs/bv2/bin/python vits_api.py > "${log_dir}/${output_log}" 2>&1 &
+nohup /home/zxd/.conda/envs/bv2/bin/python vits2_api.py > "${log_dir}/${output_log}" 2>&1 &
 
 # 获取启动的进程 ID 并输出启动信息
 PID=$!
