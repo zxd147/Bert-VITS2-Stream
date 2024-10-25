@@ -328,7 +328,7 @@ async def post_generate_audio(request: GenerateRequest):
                 audio_base64 = base64.b64encode(audio_content).decode('utf-8')
                 audio_base64 = f'{data_url},{audio_base64}'
                 # len('data:audio/wav;base64,'): 22
-                audio_base64_log = audio_base64[:30] + "..."  # 只记录前30个字符
+                audio_base64_log = audio_base64[:30] + "..." + audio_base64[-20:]  # 只记录前30个字符
                 if not return_base64:
                     audio_base64 = audio_base64_log
             else:
