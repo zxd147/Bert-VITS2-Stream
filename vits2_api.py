@@ -206,7 +206,7 @@ def stream_get_audio_data(generator, default_samplerate, audio_samplerate, audio
                     audio_content = audio_content
             yield audio_content
     end = time.process_time()
-    vits_logger.info(f"time_all: {end - start}")
+    vits_logger.info(f"time_all: {end - start}\n")
 
 
 # vits_logger = configure_logging()
@@ -338,7 +338,7 @@ async def post_generate_audio(request: GenerateRequest):
                 # stream_generator = stream_write_audio_data(generator, default_samplerate, audio_samplerate, audio_format, write_mode)
                 media_type = get_mime_type(audio_format) if audio_format.replace('.', '') != 'mp3' else 'audio/mp3'
                 end = time.process_time()
-                vits_logger.info(f"time_all: {end - start}")
+                vits_logger.info(f"time_all: {end - start}\n")
                 return StreamingResponse(stream_generator, media_type=media_type)
             end4 = time.process_time()
             vits_logger.debug(f"time_4: {end4-end3}")
@@ -476,7 +476,7 @@ async def get_generate_audio(
                                                            audio_samplerate, audio_format, write_mode)
                 media_type = get_mime_type(audio_format) if audio_format.replace('.', '') != 'mp3' else 'audio/mp3'
                 # end = time.process_time()
-                # vits_logger.info(f"time_all: {end - start}")
+                # vits_logger.info(f"time_all: {end - start}\n")
                 return StreamingResponse(stream_generator, media_type=media_type)
 
         code = 0 if status != 'Failed' else -1
@@ -489,10 +489,10 @@ async def get_generate_audio(
             audio_base64=audio_base64
         )
 
-        logs = f"TTS response results: {results}\n"
+        logs = f"TTS response results: {results}"
         vits_logger.info(logs)
         end = time.process_time()
-        vits_logger.info(f"time_all: {end - start}")
+        vits_logger.info(f"time_all: {end - start}\n")
         return JSONResponse(status_code=200, content=results.model_dump())
     # except json.JSONDecodeError as je:
     #     error_message = GenerateResponse(
