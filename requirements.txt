@@ -48,3 +48,8 @@ uvicorn==0.27.0.post1
 vector_quantize_pytorch
 WeTextProcessing>=0.1.10; platform_system != "Windows"
 whisper==1.1.10
+pyloudnorm
+soundfile
+pydub
+scipy
+wave
