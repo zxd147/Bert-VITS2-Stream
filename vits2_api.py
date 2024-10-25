@@ -1,4 +1,4 @@
-import asyncio
+Wimport asyncio
 import base64
 import copy
 import gc
@@ -355,11 +355,11 @@ async def post_generate_audio(request: GenerateRequest):
         results_log = copy.deepcopy(results)
         if audio_base64:
             results_log.audio_base64 = audio_base64_log
-        logs = f"TTS response results: {results_log}\n"
+        logs = f"TTS response results: {results_log}"
         vits_logger.info(logs)
         end = time.process_time()
         vits_logger.debug(f"time_5: {end - end4}")
-        vits_logger.info(f"time_all: {end - start}")
+        vits_logger.info(f"time_all: {end - start}\n")
         return JSONResponse(status_code=200, content=results.model_dump())
     except json.JSONDecodeError as je:
         error_message = GenerateResponse(

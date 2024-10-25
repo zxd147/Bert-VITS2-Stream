@@ -141,7 +141,7 @@ def generate(full_text, speaker, language, stream, sampling_rate, hps_map, model
     # 如果没有这个判断，会在流式模式下尝试返回一个音频数组，这样会破坏生成器的特性，并可能引发错误。
     if stream:
         # 结束流式传输时，返回一个空数组
-        logger.success('done!\n')
+        logger.success('done!')
         yield np.array([])  # 返回空数组以通知流结束
     else:
         audio_date = all_audios
