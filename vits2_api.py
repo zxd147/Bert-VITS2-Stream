@@ -251,7 +251,7 @@ class GenerateResponse(BaseModel):
 async def root():
     service_name = """
         <html> <head> <title>tts_service</title> </head>
-            <body style="display: flex; justify-content: center;"> <h1> vits_service_api</h1></body> </html>
+            <body style="display: flex; justify-content: center;"> <h1> vits2_service_api</h1></body> </html>
         """
     return HTMLResponse(content=service_name, status_code=200)
 
