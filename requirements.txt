@@ -42,7 +42,7 @@ tensorboard
 torch==2.0.0
 torchaudio==2.0.1
 torchvision==0.15.1
-triron==2.0.0
+triton==2.0.0
 tqdm==4.66.1
 transformers==4.37.2
 unidic-lite==1.0.8
