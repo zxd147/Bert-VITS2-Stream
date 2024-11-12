@@ -191,3 +191,6 @@ temp.py
 test.py
 /*.service
 stream_test.py
+nltk_data/
+
+
