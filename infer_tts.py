@@ -65,10 +65,24 @@ def save_one_model(speaker_models_config, language, temp_model_instances, device
 
 
 def process_text(ori_text):
-    clean_text = re.sub(r'[|<>\[\]]', '', ori_text)
-    symbol_replacements = {'-': '减', '+': '加', '=': '等于'}
-    # 使用str.translate()和str.maketrans()来创建一个转换表，然后一次性替换所有指定的字符。
-    translated_text = clean_text.translate(str.maketrans(symbol_replacements))
+    # 替换符号前后的数字并进行处理
+    def replace_symbol(match):
+        left, symbol, right = match.groups()
+        # 判断符号两边是否是数字
+        if left.isdigit() and right.isdigit():
+            left_num = int(left)
+            right_num = int(right)
+            # 判断数字大小来决定替换的符号
+            if symbol == '-':
+                if left_num < right_num:
+                    return f"{left}至{right}"  # 当左边数字小于右边数字时，替换为"至"
+                else:
+                    return f"{left}减{right}"  # 否则，替换为"减"
+            elif symbol == '+':
+                return f"{left}加{right}"  # + 直接替换为 "加"
+            elif symbol == '=':
+                return f"{left}等于{right}"  # = 直接替换为 "等于"
+        return match.group(0)  # 如果不符合条件，则保持原样
 
     # 正则表达式匹配整数和小数
     def process_num(match):
@@ -82,6 +96,14 @@ def process_text(ori_text):
             pro_text = ''.join(['', '点'][len(parts) > 1].join(chinese_parts))
         return pro_text
 
+    clean_text = re.sub(r'[|<>\[\]]', '', ori_text)
+    # 使用正则表达式匹配符号前后的数字并进行替换
+    symbol_pattern = r'(\d+)([+-=])(\d+)'
+    translated_text = re.sub(symbol_pattern, replace_symbol, clean_text)
+    # symbol_replacements = {'-': '减', '+': '加', '=': '等于'}
+    symbol_replacements = {'+': '加', '=': '等于'}
+    # 使用str.translate()和str.maketrans()来创建一个转换表，然后一次性替换所有指定的字符。
+    translated_text = translated_text.translate(str.maketrans(symbol_replacements))
     # 使用 re.sub 替换文本中的数字
     converted_text = re.sub(r'\d+(\.\d+)?', process_num, translated_text)
     return converted_text

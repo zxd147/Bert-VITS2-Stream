@@ -19,9 +19,6 @@ WORKDIR /app/Bert-VITS2
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=all
 
-# 映射端口
-EXPOSE 8031
-
 # 克隆并直接重命名为 Bert-VITS2
 RUN cd /app && git clone https://github.com/zxd147/Bert-VITS2-Stream.git Bert-VITS2
 
@@ -33,6 +30,9 @@ COPY ./bert/ ./bert/
 
 # 安装依赖
 RUN pip install -r ./requirements.txt
+
+# 映射端口
+EXPOSE 8031
 
 # 容器启动时默认执行的命令
 CMD ["python", "vits2_api.py"]
