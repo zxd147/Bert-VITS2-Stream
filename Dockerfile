@@ -1,5 +1,5 @@
 # 使用现有的基础镜像
-FROM init/python:ubuntu22.04-cuda11.8-python3.10
+FROM python:ubuntu22.04-cuda11.8-python3.10
 
 # 设置代理 (确保网络环境)
 # ENV all_proxy=http://192.168.0.64:7890
@@ -36,3 +36,4 @@ EXPOSE 8031
 
 # 容器启动时默认执行的命令
 CMD ["python", "vits2_api.py"]
+
