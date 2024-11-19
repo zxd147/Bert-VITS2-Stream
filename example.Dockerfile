@@ -18,6 +18,8 @@ WORKDIR /app/Bert-VITS2
 # 设置 GPU 使用
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=all
+# 设置访问密钥
+ENV VITS2-SECRET-KEY=sk-vits2
 
 # 克隆并直接重命名为 Bert-VITS2
 RUN cd /app && git clone https://github.com/zxd147/Bert-VITS2-Stream.git Bert-VITS2
