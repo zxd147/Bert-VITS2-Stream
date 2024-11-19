@@ -1,8 +1,8 @@
 # 使用现有的基础镜像
-FROM python:ubuntu22.04-cuda11.8-python3.10
+FROM base/python:ubuntu22.04-cuda11.8-python3.10
 
-# 设置代理 (确保网络环境)
-# ENV all_proxy=http://192.168.0.64:7890
+## 设置代理 (确保网络环境)
+#ENV all_proxy=http://192.168.0.64:7890
 
 # 更新并安装必要的依赖
 RUN apt-get update \
