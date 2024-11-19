@@ -17,8 +17,11 @@ import torch
 import uvicorn
 from fastapi import FastAPI
 from fastapi import Query
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse, StreamingResponse
 from pydantic import BaseModel, Field, confloat
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
 
 from config import config
 from infer_tts import generate, get_models
@@ -209,20 +212,6 @@ def stream_get_audio_data(generator, default_samplerate, audio_samplerate, audio
     vits_logger.info(f"time_all: {end - start}\n")
 
 
-# vits_logger = configure_logging()
-vits_logger = logger
-vits_app = FastAPI()
-# 创建一个线程池
-executor = ThreadPoolExecutor(max_workers=3)
-models_map = None
-hps_map = None
-device_map = None
-request_count = 0  # 初始化请求计数器
-current_speaker = 'jt'
-current_language = 'zh'
-models_config = config.api_config.models
-
-
 class GenerateRequest(BaseModel):
     sno: Union[int, str] = Field(default_factory=lambda: int(time.time() * 100))  # 动态生成时间戳
     uid: Union[int, str] = 'admin'
@@ -245,6 +234,45 @@ class GenerateResponse(BaseModel):
     messages: str
     audio_path: Optional[str] = None  # 音频文件路径
     audio_base64: Optional[str] = None  # 音频 base64 编码
+
+
+# 身份验证中间件
+class BasicAuthMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app, secret_key: str):
+        super().__init__(app)
+        self.required_credentials = secret_key
+
+    async def dispatch(self, request: Request, call_next):
+        authorization: str = request.headers.get('Authorization')
+        if authorization and authorization.startswith('Bearer '):
+            provided_credentials = authorization.split(' ')[1]
+            # 比较提供的令牌和所需的令牌
+            if provided_credentials == self.required_credentials:
+                return await call_next(request)
+        # 返回一个带有自定义消息的JSON响应
+        return JSONResponse(
+            status_code=400,
+            content={"detail": "Unauthorized: Invalid or missing credentials"},
+            headers={'WWW-Authenticate': 'Bearer realm="Secure Area"'}
+        )
+
+
+# vits_logger = configure_logging()
+vits_logger = logger
+vits_app = FastAPI()
+secret_key = os.getenv('VITS2-SECRET-KEY', 'sk-vits2')
+vits_app.add_middleware(CORSMiddleware, allow_origins=['*'], allow_credentials=True, allow_methods=['*'], allow_headers=['*'], )
+vits_app.add_middleware(BasicAuthMiddleware, secret_key=secret_key)
+
+# 创建一个线程池
+executor = ThreadPoolExecutor(max_workers=3)
+models_map = None
+hps_map = None
+device_map = None
+request_count = 0  # 初始化请求计数器
+current_speaker = 'jt'
+current_language = 'zh'
+models_config = config.api_config.models
 
 
 @vits_app.get("/")

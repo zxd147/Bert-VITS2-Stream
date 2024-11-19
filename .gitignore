@@ -187,6 +187,7 @@ logs/*
 /onnx
 /.vs
 output.txt
+Dockerfile
 temp.py
 test.py
 /*.service
