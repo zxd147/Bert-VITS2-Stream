@@ -191,7 +191,8 @@ Dockerfile
 temp.py
 test.py
 /*.service
-stream_test.py
-nltk_data/
+temp/stream_test.py
+Docker/*
+!Docker/example.Dockerfile
 
 
