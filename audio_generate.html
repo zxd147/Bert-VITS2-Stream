@@ -83,7 +83,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>输入文字生成音频</h1>
+        <h1>生成音频</h1>
         <form id="textForm">
             <div class="textarea-group">
                 <label for="textInput">请输入文字内容:</label>
@@ -97,15 +97,33 @@
                 <label for="audioSpeaker">说话者 (如 jt):</label>
                 <input type="text" id="audioSpeaker" name="speaker" placeholder="请输入音色">
             </div>
-            <!-- 添加隐藏的 stream 字段，默认为 true -->
-            <input type="hidden" id="responseStream" name="stream" value="true">
+            <div id="outputArea" style="margin-top: 20px;"></div>
+            <div class="input-group">
+                <label>是否以流式响应:</label>
+                <button type="button" id="streamToggle" style="padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;" data-stream="true">当前: 开启</button>
+            </div>
             <button type="submit">生成音频</button>
         </form>
         <audio id="audioPlayer" controls style="display:none;"></audio>
     </div>
     <script>
+        // 获取 outputArea 元素
+        const outputArea = document.getElementById('outputArea');
+        // 获取切换按钮
+        const streamToggle = document.getElementById('streamToggle');
+
+        // 切换按钮点击事件
+        streamToggle.addEventListener('click', function () {
+            const currentValue = streamToggle.getAttribute('data-stream') === 'true'; // 当前值是否为 true
+            streamToggle.setAttribute('data-stream', currentValue ? 'false' : 'true'); // 切换值
+            streamToggle.textContent = `当前${currentValue ? '关闭' : '开启'}`; // 更新按钮文本
+            streamToggle.style.backgroundColor = currentValue ? '#dc3545' : '#007bff'; // 更新按钮颜色
+        });
+
+        // 检查文字内容是否为空
         document.getElementById('textForm').onsubmit = async function(event) {
             // 检查文字内容是否为空
+            const textInput = document.getElementById('textInput').value; // 获取输入的文字
             if (!textInput) {
                 alert('文字内容不能为空');
                 return;
@@ -114,11 +132,16 @@
             event.preventDefault(); // 阻止表单默认提交
             const formData = new FormData(this); // 创建 FormData 对象
             const cleanedFormData = new FormData();  // 创建空表单
+
+            // 移除可能存在的原始 stream 字段，避免重复
+            formData.delete('stream');
+            // 添加动态 stream 值
+            formData.append('stream', streamToggle.getAttribute('data-stream'));
             // 重新添加非空字段
             for (const [key, value] of formData.entries()) {
                 const valueStr = String(value).trim();
                 if (valueStr) {
-                     console.log(`add ${key} ${valueStr}`);
+                    console.log(`add ${key} ${valueStr}`);
                     cleanedFormData.append(key, value); // 只添加非空字段
                 }
             }
@@ -126,19 +149,58 @@
             const response = await fetch('/v1/tts', { method: 'POST', body: cleanedFormData });
             if (response.ok) {
                 const contentType = response.headers.get('Content-Type');
-
                 if (contentType.includes('audio/')) {
                     // 返回的是音频流
                     const audioBlob = await response.blob(); // 获取音频的 Blob 对象
                     const audioUrl = URL.createObjectURL(audioBlob); // 创建对象 URL
-                    const audioPlayer = document.getElementById('audioPlayer');
+                    const audioPlayer = document.getElementById('audioPlayer'); // 获取音频播放器元素
                     audioPlayer.src = audioUrl; // 设置音频播放源
                     audioPlayer.style.display = 'block'; // 显示音频播放器
                     audioPlayer.play(); // 播放音频
+                    outputArea.innerHTML = ''; // 清空其他内容
                 } else if (contentType.includes('application/json')) {
                     // 返回的是 JSON 数据
                     const jsonData = await response.json();
-                    displayJson(jsonData);
+                    outputArea.innerHTML = ''; // 清空输出区域
+
+                    // 提取 audio_path 字段
+                    const audioPath = jsonData.audio_path || '未找到 audio_path';
+                    // 显示 audio_path
+                    const audioPathDiv = document.createElement('div');
+                    audioPathDiv.textContent = audioPath;
+                    audioPathDiv.style.cursor = 'pointer';
+                    audioPathDiv.style.color = 'blue';
+                    audioPathDiv.style.textDecoration = 'underline';
+                    outputArea.appendChild(audioPathDiv);
+
+                    // 添加展开按钮
+                    const toggleButton = document.createElement('button');
+                    toggleButton.textContent = '展开';
+                    toggleButton.style.marginTop = '10px';
+                    toggleButton.style.padding = '5px';
+                    toggleButton.style.cursor = 'pointer';
+                    // 添加完整 JSON 的容器
+                    const fullJsonDiv = document.createElement('div');
+                    fullJsonDiv.style.display = 'none'; // 默认隐藏完整 JSON
+                    fullJsonDiv.style.marginTop = '10px';
+                    fullJsonDiv.style.padding = '10px';
+                    fullJsonDiv.style.border = '1px solid #ddd';
+                    fullJsonDiv.style.borderRadius = '5px';
+                    fullJsonDiv.style.backgroundColor = '#f9f9f9';
+                    fullJsonDiv.style.whiteSpace = 'pre-wrap'; // 保留换行格式
+                    fullJsonDiv.textContent = JSON.stringify(jsonData, null, 2);
+
+                    // 切换显示/隐藏逻辑
+                    toggleButton.onclick = function (event) {
+                        event.preventDefault(); // 阻止默认行为
+                        // event.stopPropagation(); // 阻止事件冒泡
+                        // 确保只有一个事件触发，切换显示状态
+                        const isHidden = fullJsonDiv.style.display === 'none';
+                        fullJsonDiv.style.display = isHidden ? 'block' : 'none';
+                        toggleButton.textContent = isHidden ? '收起' : '展开';
+                    };
+                    outputArea.appendChild(toggleButton);
+                    outputArea.appendChild(fullJsonDiv);
                 } else {
                     throw new Error('未知响应类型');
                 }
