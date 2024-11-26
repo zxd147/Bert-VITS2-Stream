@@ -97,7 +97,7 @@
                 <label for="audioSpeaker">说话者 (如 jt):</label>
                 <input type="text" id="audioSpeaker" name="speaker" placeholder="请输入音色">
             </div>
-            <div id="outputArea" style="margin-top: 20px;"></div>
+            <div id="outputArea" style="margin-top: 20px; font-size: 18px; font-weight: bold;"></div>
             <div class="input-group">
                 <label>是否以流式响应:</label>
                 <button type="button" id="streamToggle" style="padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;" data-stream="true">当前: 开启</button>
@@ -169,8 +169,10 @@
                     const audioPathDiv = document.createElement('div');
                     audioPathDiv.textContent = audioPath;
                     audioPathDiv.style.cursor = 'pointer';
-                    audioPathDiv.style.color = 'blue';
-                    audioPathDiv.style.textDecoration = 'underline';
+                    audioPathDiv.style.color = '#007bff';  // 设置为蓝色，避免蓝底和下划线
+                    audioPathDiv.style.fontWeight = 'bold';  // 设置加粗
+                    audioPathDiv.style.fontSize = '16px';  // 设置适中的字体大小
+                    audioPathDiv.style.marginTop = '10px';  // 添加一点顶部间距
                     outputArea.appendChild(audioPathDiv);
 
                     // 添加展开按钮
@@ -188,6 +190,8 @@
                     fullJsonDiv.style.borderRadius = '5px';
                     fullJsonDiv.style.backgroundColor = '#f9f9f9';
                     fullJsonDiv.style.whiteSpace = 'pre-wrap'; // 保留换行格式
+                    fullJsonDiv.style.maxWidth = '100%'; // 设置最大宽度为 100%
+                    fullJsonDiv.style.overflowX = 'auto'; // 当内容超出时显示水平滚动条
                     fullJsonDiv.textContent = JSON.stringify(jsonData, null, 2);
 
                     // 切换显示/隐藏逻辑
