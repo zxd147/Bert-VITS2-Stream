@@ -97,7 +97,6 @@
                 <label for="audioSpeaker">说话者 (如 jt):</label>
                 <input type="text" id="audioSpeaker" name="speaker" placeholder="请输入音色">
             </div>
-            <div id="outputArea" style="margin-top: 20px; font-size: 18px; font-weight: bold;"></div>
             <div class="input-group">
                 <label>是否以流式响应:</label>
                 <button type="button" id="streamToggle" style="padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;" data-stream="true">当前: 开启</button>
@@ -105,6 +104,7 @@
             <button type="submit">生成音频</button>
         </form>
         <audio id="audioPlayer" controls style="display:none;"></audio>
+        <div id="outputArea" style="margin-top: 20px; font-size: 18px; font-weight: bold;"></div>  <!-- 用于显示结果 -->
     </div>
     <script>
         // 获取 outputArea 元素
@@ -181,6 +181,7 @@
                     toggleButton.style.marginTop = '10px';
                     toggleButton.style.padding = '5px';
                     toggleButton.style.cursor = 'pointer';
+
                     // 添加完整 JSON 的容器
                     const fullJsonDiv = document.createElement('div');
                     fullJsonDiv.style.display = 'none'; // 默认隐藏完整 JSON
