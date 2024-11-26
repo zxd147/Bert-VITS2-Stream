@@ -450,7 +450,7 @@ async def get_generate_audio(
         write_mode: Literal['ffmpeg', 'package', 'ffmpeg_without_stream', 'package_without_stream'] = 'package',
         return_base64: Optional[bool] = None
 ):
-    # try:
+    try:
         start = time.process_time()
         sdp_ratio = 0.5
         noise_scale = 0.6
@@ -530,14 +530,14 @@ async def get_generate_audio(
         end = time.process_time()
         vits_logger.info(f"time_all: {end - start}\n")
         return JSONResponse(status_code=200, content=results.model_dump())
-    # except json.JSONDecodeError as je:
-    #     error_message = GenerateResponse(
-    #         code=-1,
-    #         messages=f"JSONDecodeError, Invalid JSON format: {str(je)} "
-    #     )
-    #     logs = f"Generate audio error: {error_message}\n"
-    #     vits_logger.error(logs)
-    #     return JSONResponse(status_code=400, content=error_message.model_dump())
+    except json.JSONDecodeError as je:
+        error_message = GenerateResponse(
+            code=-1,
+            messages=f"JSONDecodeError, Invalid JSON format: {str(je)} "
+        )
+        logs = f"Generate audio error: {error_message}\n"
+        vits_logger.error(logs)
+        return JSONResponse(status_code=400, content=error_message.model_dump())
     # except Exception as e:
     #     error_message = GenerateResponse(
     #         code=-1,
