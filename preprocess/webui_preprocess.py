@@ -3,7 +3,13 @@ import os
 import shutil
 import subprocess
 
-os.chdir('../')
+# 获取当前文件所在的目录
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# 获取上一层目录
+parent_dir = os.path.dirname(current_dir)
+# 切换到上一层目录
+os.chdir(parent_dir)
+
 import gradio as gr
 
 

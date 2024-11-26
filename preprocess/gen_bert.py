@@ -6,7 +6,12 @@ import torch
 import torch.multiprocessing as mp
 from tqdm import tqdm
 
-os.chdir('../')
+# 获取当前文件所在的目录
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# 获取上一层目录
+parent_dir = os.path.dirname(current_dir)
+# 切换到上一层目录
+os.chdir(parent_dir)
 import commons
 from config import config
 from text import check_bert_models, convert_to_ids, get_bert

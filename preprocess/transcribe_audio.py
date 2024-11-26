@@ -7,7 +7,12 @@ import torch
 import whisper
 import yaml
 
-os.chdir('../')
+# 获取当前文件所在的目录
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# 获取上一层目录
+parent_dir = os.path.dirname(current_dir)
+# 切换到上一层目录
+os.chdir(parent_dir)
 from config import Config
 
 yml_path = 'config.yml'
@@ -41,7 +46,7 @@ def transcribe_one(audio_path):
     print(f"Detected language: {max(probs, key=probs.get)}")
     language = max(probs, key=probs.get)
     # decode the audio
-    prompt = '缺牙, 镶牙, 拔牙, 牙齿移位, 近远中牙齿, 上牙移位, 单边吃东西, 大小脸, 关节弹响, 牙齿咬合, 假牙, 牙齿美白, 牙幼质, 牙本质, 牙骨质, 牙齿浅黄色, 补牙, 高速手机, 牙质, 牙洞, 垫底材料, 补牙材料, 龋坏, 临面龋坏, 五类洞, 牙颈部, 刷牙, 假壁。'
+    prompt = ""
     options = whisper.DecodingOptions(beam_size=5, prompt=prompt)
     result = whisper.decode(model, mel, options)
     asr_text = result.text

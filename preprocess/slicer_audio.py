@@ -8,7 +8,12 @@ import yaml
 from config import Config
 from tools.slicer import Slicer
 
-os.chdir('../')
+# 获取当前文件所在的目录
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# 获取上一层目录
+parent_dir = os.path.dirname(current_dir)
+# 切换到上一层目录
+os.chdir(parent_dir)
 yml_path = 'config.yml'
 config = Config(yml_path)
 with open(yml_path, mode="r", encoding="utf-8") as f:
@@ -28,11 +33,11 @@ for i, audio_path in enumerate(audio_paths):
                              mono=False)  # Load an audio file with librosa.
     slicer = Slicer(
         sr=sr,
-        threshold=-40,
-        min_length=2000,
-        min_interval=400,
-        hop_size=10,
-        max_sil_kept=500
+        threshold=-40,  # 阈值
+        min_length=2000,  # 切片的最小长度
+        min_interval=100,  # 切分点之间的最小间隔
+        hop_size=10,  # 静音检测的精度
+        max_sil_kept=500  # 切片中保留的静音长度
     )
     chunks = slicer.slice(audio)
     file_name = os.path.basename(audio_path).split('.')[0]
