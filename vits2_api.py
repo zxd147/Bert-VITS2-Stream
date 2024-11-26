@@ -294,8 +294,16 @@ async def health():
 
 
 @vits_app.post("/v1/tts")
-async def post_generate_audio(request: GenerateRequest):
+async def post_generate_audio(request: Request):
     try:
+        # 判断请求的内容类型
+        if request.headers.get('content-type') == 'application/json':
+            json_data = await request.json()
+            request = GenerateRequest(**json_data)
+        else:
+            # 解析表单数据
+            form_data = await request.form()
+            request = GenerateRequest(**form_data)
         start = time.process_time()
         text = request.text
         if not text:
@@ -538,6 +546,14 @@ async def get_generate_audio(
     #     logs = f"Generate audio error: {error_message}\n"
     #     vits_logger.error(logs)
     #     return JSONResponse(status_code=500, content=error_message.model_dump())
+
+
+@vits_app.get('/audio/generate', response_class=HTMLResponse)
+async def convert_audio(
+        request: Request,
+):
+    with open("./audio_generate.html", "r", encoding="utf-8") as f:
+        return f.read()
 
 
 if __name__ == "__main__":

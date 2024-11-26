@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音频生成</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .textarea-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .textarea-group label {
+            font-weight: bold;
+            color: #555;
+        }
+        .textarea-group textarea {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            resize: none;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .input-group label {
+            font-weight: bold;
+            color: #555;
+        }
+        .input-group input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #5cb85c;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #4cae4c;
+        }
+        audio {
+            margin-top: 20px;
+            width: 100%;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>输入文字生成音频</h1>
+        <form id="textForm">
+            <div class="textarea-group">
+                <label for="textInput">请输入文字内容:</label>
+                <textarea id="textInput" name="text" rows="5" placeholder="在此输入需要转换为音频的文字" required></textarea>
+            </div>
+            <div class="input-group">
+                <label for="audioFormat">音频格式 (如 .wav, .mp3):</label>
+                <input type="text" id="audioFormat" name="audio_format" placeholder="请输入音频格式">
+            </div>
+            <div class="input-group">
+                <label for="audioSpeaker">说话者 (如 jt):</label>
+                <input type="text" id="audioSpeaker" name="speaker" placeholder="请输入音色">
+            </div>
+            <!-- 添加隐藏的 stream 字段，默认为 true -->
+            <input type="hidden" id="responseStream" name="stream" value="true">
+            <button type="submit">生成音频</button>
+        </form>
+        <audio id="audioPlayer" controls style="display:none;"></audio>
+    </div>
+    <script>
+        document.getElementById('textForm').onsubmit = async function(event) {
+            // 检查文字内容是否为空
+            if (!textInput) {
+                alert('文字内容不能为空');
+                return;
+            }
+
+            event.preventDefault(); // 阻止表单默认提交
+            const formData = new FormData(this); // 创建 FormData 对象
+            const cleanedFormData = new FormData();  // 创建空表单
+            // 重新添加非空字段
+            for (const [key, value] of formData.entries()) {
+                const valueStr = String(value).trim();
+                if (valueStr) {
+                     console.log(`add ${key} ${valueStr}`);
+                    cleanedFormData.append(key, value); // 只添加非空字段
+                }
+            }
+
+            const response = await fetch('/v1/tts', { method: 'POST', body: cleanedFormData });
+            if (response.ok) {
+                const contentType = response.headers.get('Content-Type');
+
+                if (contentType.includes('audio/')) {
+                    // 返回的是音频流
+                    const audioBlob = await response.blob(); // 获取音频的 Blob 对象
+                    const audioUrl = URL.createObjectURL(audioBlob); // 创建对象 URL
+                    const audioPlayer = document.getElementById('audioPlayer');
+                    audioPlayer.src = audioUrl; // 设置音频播放源
+                    audioPlayer.style.display = 'block'; // 显示音频播放器
+                    audioPlayer.play(); // 播放音频
+                } else if (contentType.includes('application/json')) {
+                    // 返回的是 JSON 数据
+                    const jsonData = await response.json();
+                    displayJson(jsonData);
+                } else {
+                    throw new Error('未知响应类型');
+                }
+            } else {
+                console.error('文字转换音频失败:', response.statusText);
+                alert('文字转换音频失败，请重试。');
+            }
+        };
+    </script>
+</body>
+</html>
