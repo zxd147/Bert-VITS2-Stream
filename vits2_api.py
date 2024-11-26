@@ -262,7 +262,7 @@ vits_logger = logger
 vits_app = FastAPI()
 secret_key = os.getenv('VITS2-SECRET-KEY', 'sk-vits2')
 vits_app.add_middleware(CORSMiddleware, allow_origins=['*'], allow_credentials=True, allow_methods=['*'], allow_headers=['*'], )
-# vits_app.add_middleware(BasicAuthMiddleware, secret_key=secret_key)
+vits_app.add_middleware(BasicAuthMiddleware, secret_key=secret_key)
 
 # 创建一个线程池
 executor = ThreadPoolExecutor(max_workers=3)
@@ -560,6 +560,6 @@ if __name__ == "__main__":
     init_app()
     host = config.api_config.host
     port = config.api_config.port
-    uvicorn.run(vits_app, host=host, port=8032)
+    uvicorn.run(vits_app, host=host, port=8031)
 
 
