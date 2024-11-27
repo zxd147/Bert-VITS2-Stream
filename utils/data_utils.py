@@ -59,28 +59,67 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         lengths = []
         skipped = 0
         logger.info("Init dataset...")
-        for _id, spk, language, text, phones, tone, word2ph in tqdm(
-            self.audiopaths_sid_text
-        ):
-            audiopath = f"{_id}"
-            if self.min_text_len <= len(phones) <= self.max_text_len:
-                phones = phones.split(" ")
-                tone = [int(i) for i in tone.split(" ")]
-                word2ph = [int(i) for i in word2ph.split(" ")]
-                audiopaths_sid_text_new.append(
-                    [audiopath, spk, language, text, phones, tone, word2ph]
-                )
-                lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
-            else:
-                skipped += 1
-        logger.info(
-            "skipped: "
-            + str(skipped)
-            + ", total: "
-            + str(len(self.audiopaths_sid_text))
-        )
-        self.audiopaths_sid_text = audiopaths_sid_text_new
-        self.lengths = lengths
+        try:
+            for index, item in enumerate(tqdm(self.audiopaths_sid_text)):
+                try:
+                    # 尝试解包当前元素
+                    _id, spk, language, text, phones, tone, word2ph = item
+                    audiopath = f"{_id}"
+
+                    # 检查 `phones`, `tone`, `word2ph` 的格式是否正确
+                    if self.min_text_len <= len(phones) <= self.max_text_len:
+                        phones = phones.split(" ")
+                        tone = [int(i) for i in tone.split(" ")]
+                        word2ph = [int(i) for i in word2ph.split(" ")]
+                        audiopaths_sid_text_new.append(
+                            [audiopath, spk, language, text, phones, tone, word2ph]
+                        )
+                        lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
+                    else:
+                        skipped += 1
+                except Exception as inner_e:
+                    # 打印当前出错的具体值
+                    print(f"Error at index {index}: {item}")
+                    raise inner_e
+            logger.info(
+                "skipped: "
+                + str(skipped)
+                + ", total: "
+                + str(len(self.audiopaths_sid_text))
+            )
+            self.audiopaths_sid_text = audiopaths_sid_text_new
+            self.lengths = lengths
+        except Exception as e:
+            # 如果问题更深层，打印所有数据
+            print("Error in audiopaths_sid_text processing.")
+            print(f"Full data: {self.audiopaths_sid_text}")
+            raise e
+
+        # try:
+        #     for _id, spk, language, text, phones, tone, word2ph in tqdm(
+        #         self.audiopaths_sid_text
+        #     ):
+        #         audiopath = f"{_id}"
+        #         if self.min_text_len <= len(phones) <= self.max_text_len:
+        #             phones = phones.split(" ")
+        #             tone = [int(i) for i in tone.split(" ")]
+        #             word2ph = [int(i) for i in word2ph.split(" ")]
+        #             audiopaths_sid_text_new.append(
+        #                 [audiopath, spk, language, text, phones, tone, word2ph]
+        #             )
+        #             lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
+        #         else:
+        #             skipped += 1
+        #     logger.info(
+        #         "skipped: "
+        #         + str(skipped)
+        #         + ", total: "
+        #         + str(len(self.audiopaths_sid_text))
+        #     )
+        #     self.audiopaths_sid_text = audiopaths_sid_text_new
+        #     self.lengths = lengths
+        # except Exception as e:
+        #     print(self.audiopaths_sid_text)
 
     def get_audio_text_speaker_pair(self, audiopath_sid_text):
         # separate filename, speaker_id and text
