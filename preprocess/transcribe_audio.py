@@ -46,7 +46,7 @@ def transcribe_one(audio_path):
     print(f"Detected language: {max(probs, key=probs.get)}")
     language = max(probs, key=probs.get)
     # decode the audio
-    prompt = ""
+    prompt = "这是一句简体中文的句子。"
     options = whisper.DecodingOptions(beam_size=5, prompt=prompt)
     result = whisper.decode(model, mel, options)
     asr_text = result.text

@@ -110,12 +110,16 @@ def process_text(ori_text):
 
 
 def gradio_infer(text, speaker, language, rate, sdp, scale, noise, length):
-    stream = False  # Gradio的web网页不支持流式哦
+    stream = False
     device_map, models_map, hps_map = get_models(models, speaker, language)
     generator = generate(text, speaker, language, stream, rate, hps_map,
                          models_map, device_map, sdp, scale, noise, length)
     status, audio_concat = list(generator)[0]
-    audio_concat = (audio_concat / np.abs(audio_concat).max() * 32767).astype(np.int16)
+    # audio_concat = (audio_concat / np.abs(audio_concat).max() * 32767).astype(np.int16)
+    # 归一化到 [-1.0, 1.0] 范围
+    audio_data = audio_concat / np.max(np.abs(audio_concat), axis=0)  # 确保最大值为 1.0
+    audio_data = audio_data.astype(np.float32)  # 转为 float32 类型
+    print(f"生成的音频数据大小: {audio_data.shape}")  # 输出生成音频数据的形状
     final_audio = (rate, audio_concat)
     return status, final_audio
 
@@ -223,7 +227,7 @@ if __name__ == "__main__":
     with gr.Blocks() as app:
         with gr.Row():
             with gr.Column():
-                all_speakers = ["jt", "huang", "li"]
+                # all_speakers = ["jt", "huang", "li"]
                 all_languages = ["zh", "ja", "en", "mix", "auto"]
                 web_device = config.webui_config.device
                 web_config_path = config.webui_config.config_path
@@ -233,6 +237,8 @@ if __name__ == "__main__":
                 web_model = get_model(model_path=web_model_path, device=web_device, hps=web_hps)
                 num_speakers = web_model.n_speakers
                 speaker_ids = web_hps.data.spk2id
+                # 获取所有的 speaker 名称
+                all_speakers = list(speaker_ids.keys())
                 web_text = gr.TextArea(label="输入文本内容")
                 web_speaker = gr.Dropdown(choices=all_speakers, value=all_speakers[0], label="Speaker")
                 web_language = gr.Dropdown(choices=all_languages, value=all_languages[0], label="Language")
@@ -259,7 +265,7 @@ if __name__ == "__main__":
                     Xiao_Gong_image = gr.Image(label="宵宫", show_label=True,
                                                value=os.path.abspath("./temp/img/宵宫.png"))
         btn.click(
-            gradio_infer,
+            fn=gradio_infer,
             inputs=[web_text, web_speaker, web_language, web_sampling_rate, web_sdp_ratio, web_noise_scale,
                     web_noise_scale_w, web_length_scale],
             outputs=[text_output, audio_output])

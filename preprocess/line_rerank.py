@@ -23,7 +23,7 @@ preprocess_text_config = config.preprocess_text_config
 def rerank(file):
     # 根据传入参数选择排序的文件
     file_list = preprocess_text_config.train_path if file == 'train' else preprocess_text_config.val_path
-    # file_list = file_list.replace('train', 'result')
+    # file_list = file_list.replace('train', 'result').replace('val', 'result')
 
     # 读取文件内容
     with open(file_list, "r", encoding="utf-8") as f:
@@ -48,11 +48,11 @@ def extract_numbers(line):
     # 提取第一个数字
     first_number = int(re.search(r'(\d+)', line).group())
     # 提取 _ 后的第二个数字
-    # second_number_match = re.search(r'_(\d+)_(\d+)', line)
-    second_number_match = re.search(r'_(\d+)', line)
+    second_number_match = re.search(r'_(\d+)_(\d+)', line)
+    # second_number_match = re.search(r'_(\d+)', line)
     if second_number_match:
-        # second_number = int(second_number_match.group(2))
-        second_number = int(second_number_match.group(1))
+        second_number = int(second_number_match.group(2))
+        # second_number = int(second_number_match.group(1))
     else:
         second_number = 0  # 如果没有匹配到第二个数字，则默认设为 0
     # return alphabetical_part, first_number, second_number
