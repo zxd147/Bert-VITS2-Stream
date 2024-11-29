@@ -43,6 +43,7 @@ def get_models(models_config, speaker, language):
     languages = [language] if language != 'mix' else speaker_models_config.keys()
     for lang in languages:
         save_one_model(speaker_models_config, lang, temp_model_instances, device_map, models_map, hps_map)
+    del model_instances
     model_instances = temp_model_instances
     del temp_model_instances
     torch_gc()
