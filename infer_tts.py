@@ -17,7 +17,7 @@ from utils.model_utils import get_hparams_from_file
 
 # 模型加载和设备设置
 os.environ['GRADIO_ANALYTICS_ENABLED'] = 'False'
-model_instances = {}
+model_instances = {}  # {"path": Model}
 
 
 # 垃圾回收操作执行垃圾回收和 CUDA 缓存清空

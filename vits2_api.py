@@ -50,8 +50,8 @@ def torch_gc():
         torch.cuda.ipc_collect()  # 收集CUDA内存碎片
 
 
-def init_app():
-    refresh_models(current_speaker, current_language)
+async def init_app():
+    await refresh_models(current_speaker, current_language)
     if torch.cuda.is_available():
         log = f'本次加载模型的设备为GPU: {torch.cuda.get_device_name(0)}'
     else:
@@ -137,7 +137,7 @@ def analyze_path(default_dir, file_path, filee_name, file_format):
     return final_path
 
 
-def refresh_models(speaker, language):
+async def refresh_models(speaker, language):
     global models_map, hps_map, device_map, request_count, current_speaker, current_language  # 声明全局变量
     if speaker != current_speaker or not models_map:
         current_speaker = speaker
@@ -336,7 +336,7 @@ async def post_generate_audio(request: Request):
         # length_scale = min(max(0.0, (2.0 - speech_rate)), 2.0)
         audio_path = analyze_path(default_dir, audio_path, audio_name, audio_format)
         logs = f"使用的音频路径为{audio_path}"  # 不一定会保存，如果流式
-        refresh_models(speaker, language)
+        await refresh_models(speaker, language)
         vits_logger.info(logs)
         with torch.no_grad():
             # # 将GPU推理任务放入线程池中以实现异步处理
@@ -487,7 +487,7 @@ async def get_generate_audio(
         audio_name = str(uuid.uuid4().hex[:8])
         audio_path = analyze_path(default_dir, audio_path, audio_name, audio_format)
         logs = f"使用的音频路径为{audio_path}"  # 不一定会保存，如果流式
-        refresh_models(speaker, language)
+        await refresh_models(speaker, language)
         vits_logger.info(logs)
 
         with torch.no_grad():
@@ -559,7 +559,7 @@ async def convert_audio(
 
 
 if __name__ == "__main__":
-    init_app()
+    asyncio.run(init_app())  # 确保在启动服务器之前执行异步初始化
     host = config.api_config.host
     port = config.api_config.port
     uvicorn.run(vits_app, host=host, port=8031)
