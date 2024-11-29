@@ -59,28 +59,22 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         lengths = []
         skipped = 0
         logger.info("Init dataset...")
-        try:
-            for index, item in enumerate(tqdm(self.audiopaths_sid_text)):
-                try:
-                    # 尝试解包当前元素
-                    _id, spk, language, text, phones, tone, word2ph = item
-                    audiopath = f"{_id}"
 
-                    # 检查 `phones`, `tone`, `word2ph` 的格式是否正确
-                    if self.min_text_len <= len(phones) <= self.max_text_len:
-                        phones = phones.split(" ")
-                        tone = [int(i) for i in tone.split(" ")]
-                        word2ph = [int(i) for i in word2ph.split(" ")]
-                        audiopaths_sid_text_new.append(
-                            [audiopath, spk, language, text, phones, tone, word2ph]
-                        )
-                        lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
-                    else:
-                        skipped += 1
-                except Exception as inner_e:
-                    # 打印当前出错的具体值
-                    print(f"Error at index {index}: {item}")
-                    raise inner_e
+        try:
+            for _id, spk, language, text, phones, tone, word2ph in tqdm(
+                    self.audiopaths_sid_text
+            ):
+                audiopath = f"{_id}"
+                if self.min_text_len <= len(phones) <= self.max_text_len:
+                    phones = phones.split(" ")
+                    tone = [int(i) for i in tone.split(" ")]
+                    word2ph = [int(i) for i in word2ph.split(" ")]
+                    audiopaths_sid_text_new.append(
+                        [audiopath, spk, language, text, phones, tone, word2ph]
+                    )
+                    lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
+                else:
+                    skipped += 1
             logger.info(
                 "skipped: "
                 + str(skipped)
@@ -90,26 +84,30 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
             self.audiopaths_sid_text = audiopaths_sid_text_new
             self.lengths = lengths
         except Exception as e:
-            # 如果问题更深层，打印所有数据
-            print("Error in audiopaths_sid_text processing.")
-            print(f"Full data: {self.audiopaths_sid_text}")
-            raise e
+            print(self.audiopaths_sid_text)
 
         # try:
-        #     for _id, spk, language, text, phones, tone, word2ph in tqdm(
-        #         self.audiopaths_sid_text
-        #     ):
-        #         audiopath = f"{_id}"
-        #         if self.min_text_len <= len(phones) <= self.max_text_len:
-        #             phones = phones.split(" ")
-        #             tone = [int(i) for i in tone.split(" ")]
-        #             word2ph = [int(i) for i in word2ph.split(" ")]
-        #             audiopaths_sid_text_new.append(
-        #                 [audiopath, spk, language, text, phones, tone, word2ph]
-        #             )
-        #             lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
-        #         else:
-        #             skipped += 1
+        #     for index, item in enumerate(tqdm(self.audiopaths_sid_text)):
+        #         try:
+        #             # 尝试解包当前元素
+        #             _id, spk, language, text, phones, tone, word2ph = item
+        #             audiopath = f"{_id}"
+        #
+        #             # 检查 `phones`, `tone`, `word2ph` 的格式是否正确
+        #             if self.min_text_len <= len(phones) <= self.max_text_len:
+        #                 phones = phones.split(" ")
+        #                 tone = [int(i) for i in tone.split(" ")]
+        #                 word2ph = [int(i) for i in word2ph.split(" ")]
+        #                 audiopaths_sid_text_new.append(
+        #                     [audiopath, spk, language, text, phones, tone, word2ph]
+        #                 )
+        #                 lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
+        #             else:
+        #                 skipped += 1
+        #         except Exception as inner_e:
+        #             # 打印当前出错的具体值
+        #             print(f"Error at index {index}: {item}")
+        #             raise inner_e
         #     logger.info(
         #         "skipped: "
         #         + str(skipped)
@@ -119,7 +117,10 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         #     self.audiopaths_sid_text = audiopaths_sid_text_new
         #     self.lengths = lengths
         # except Exception as e:
-        #     print(self.audiopaths_sid_text)
+        #     # 如果问题更深层，打印所有数据
+        #     print("Error in audiopaths_sid_text processing.")
+        #     print(f"Full data: {self.audiopaths_sid_text}")
+        #     raise e
 
     def get_audio_text_speaker_pair(self, audiopath_sid_text):
         # separate filename, speaker_id and text
@@ -327,13 +328,13 @@ class DistributedBucketSampler(torch.utils.data.distributed.DistributedSampler):
     """
 
     def __init__(
-        self,
-        dataset,
-        batch_size,
-        boundaries,
-        num_replicas=None,
-        rank=None,
-        shuffle=True,
+            self,
+            dataset,
+            batch_size,
+            boundaries,
+            num_replicas=None,
+            rank=None,
+            shuffle=True,
     ):
         super().__init__(dataset, num_replicas=num_replicas, rank=rank, shuffle=shuffle)
         self.lengths = dataset.lengths
@@ -371,8 +372,8 @@ class DistributedBucketSampler(torch.utils.data.distributed.DistributedSampler):
             len_bucket = len(buckets[i])
             total_batch_size = self.num_replicas * self.batch_size
             rem = (
-                total_batch_size - (len_bucket % total_batch_size)
-            ) % total_batch_size
+                          total_batch_size - (len_bucket % total_batch_size)
+                  ) % total_batch_size
             num_samples_per_bucket.append(len_bucket + rem)
         return buckets, num_samples_per_bucket
 
@@ -401,21 +402,21 @@ class DistributedBucketSampler(torch.utils.data.distributed.DistributedSampler):
             # add extra samples to make it evenly divisible
             rem = num_samples_bucket - len_bucket
             ids_bucket = (
-                ids_bucket
-                + ids_bucket * (rem // len_bucket)
-                + ids_bucket[: (rem % len_bucket)]
+                    ids_bucket
+                    + ids_bucket * (rem // len_bucket)
+                    + ids_bucket[: (rem % len_bucket)]
             )
 
             # subsample
-            ids_bucket = ids_bucket[self.rank :: self.num_replicas]
+            ids_bucket = ids_bucket[self.rank:: self.num_replicas]
 
             # batching
             for j in range(len(ids_bucket) // self.batch_size):
                 batch = [
                     bucket[idx]
                     for idx in ids_bucket[
-                        j * self.batch_size : (j + 1) * self.batch_size
-                    ]
+                               j * self.batch_size: (j + 1) * self.batch_size
+                               ]
                 ]
                 batches.append(batch)
 

@@ -141,6 +141,7 @@ def refresh_models(speaker, language):
     global models_map, hps_map, device_map, request_count, current_speaker, current_language  # 声明全局变量
     if speaker != current_speaker or not models_map:
         current_speaker = speaker
+        vits_logger.info("检测到speaker发生改变，重新加载模型...")
         device_map, models_map, hps_map = get_models(models_config, speaker, language)
     elif current_language == 'mix':
         # 检查请求的语言是否不是 'mix'
@@ -154,6 +155,7 @@ def refresh_models(speaker, language):
         else:
             request_count = 0  # 重置请求计数器
     elif language == 'mix':
+        vits_logger.info("检测到language发生改变，重新加载模型...")
         current_language = language
         device_map, models_map, hps_map = get_models(models_config, speaker, language)
     return device_map, models_map, hps_map
