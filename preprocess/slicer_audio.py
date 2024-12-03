@@ -35,9 +35,9 @@ for i, audio_path in enumerate(audio_paths):
         sr=sr,
         threshold=-40,  # 阈值
         min_length=2000,  # 切片的最小长度
-        min_interval=100,  # 切分点之间的最小间隔
+        min_interval=400,  # 切分点之间的最小间隔
         hop_size=10,  # 静音检测的精度
-        max_sil_kept=500  # 切片中保留的静音长度
+        max_sil_kept=700  # 切片中保留的静音长度
     )
     chunks = slicer.slice(audio)
     file_name = os.path.basename(audio_path).split('.')[0]

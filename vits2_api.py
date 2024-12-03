@@ -219,7 +219,7 @@ class GenerateRequest(BaseModel):
     uid: Union[int, str] = 'admin'
     text: str
     stream: Optional[bool] = None
-    speaker: Literal['jt', 'huang', 'li'] = 'jt'
+    speaker: Literal['jt', 'huang', 'li', 'yu'] = 'jt'
     language: Literal['zh', 'en', 'ja', 'mix'] = 'zh'
     speech_rate: confloat(ge=0.0, le=2.0) = 1.1  # speech_rate 必须是 0.0 到 2.0 之间的浮点数
     cut_by_sent: bool = False

@@ -18,8 +18,8 @@ preprocess_text_config = config.preprocess_text_config
 
 
 @click.command()
-# @click.option("--file", default='train', type=str, help="选择排序的文件: 'train' 或 'val'")
-@click.option("--file", default='val', type=str, help="选择排序的文件: 'train' 或 'val'")
+@click.option("--file", default='train', type=str, help="选择排序的文件: 'train' 或 'val'")
+# @click.option("--file", default='val', type=str, help="选择排序的文件: 'train' 或 'val'")
 def rerank(file):
     # 根据传入参数选择排序的文件
     file_list = preprocess_text_config.train_path if file == 'train' else preprocess_text_config.val_path
@@ -41,7 +41,7 @@ def rerank(file):
     print(f"重新排序完成，总共{len(sorted_lines)}行")
 
 
-# 提取第一个数字和 _ 后的第二个数字
+# 提取第一个数字和下划线 _ 后的第二个数字
 def extract_numbers(line):
     # 按字母顺序原样返回行作为第一个排序关键字
     alphabetical_part = line
