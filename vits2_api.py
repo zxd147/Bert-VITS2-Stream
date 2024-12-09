@@ -286,6 +286,7 @@ async def root():
     return HTMLResponse(content=service_name, status_code=200)
 
 
+@vits_app.get("/http_check")
 @vits_app.get("/health")
 async def health():
     """Health check."""
@@ -295,6 +296,9 @@ async def health():
     return JSONResponse(content=health_data, status_code=200)
 
 
+@vits_app.post("/v1/audio/speech")
+@vits_app.post("/v1/audio/synthesis")
+@vits_app.post("/v1/audio/generate")
 @vits_app.post("/v1/tts")
 async def post_generate_audio(request: Request):
     try:

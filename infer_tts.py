@@ -59,30 +59,40 @@ def save_one_model(speaker_models_config, language, temp_model_instances, device
     # 获取超参数
     hps = get_hparams_from_file(config_path)
     # 加载模型，如果模型已经存在则复用
-    model = model_instances.get(model_path, get_model(model_path=model_path, device=device, hps=hps))
+    # model = model_instances.get(model_path, get_model(model_path=model_path, device=device, hps=hps))
+    model = model_instances.get(model_path) or get_model(model_path=model_path, device=device, hps=hps)
     models_map[language] = temp_model_instances[model_path] = model
     hps_map[language] = hps
     device_map[language] = device
 
 
 def process_text(ori_text):
+    # 匹配多个数字和符号组合，例如 100-300-500
+    def process_multiple_numbers(text):
+        pattern = r'(\d+)([+-=])(\d+)'  # 匹配单组数字和符号
+        while re.findall(r'\d+[-+=]\d+', text):
+            text = re.sub(pattern, replace_symbol, text)
+        pattern_negative = r'(?<!\d)(-)(\d+)'  # (?<!\d) 确保负号前没有数字, 将 '-' 替换为 "负"
+        text = re.sub(pattern_negative, lambda match: f"负{match.group(2)}", text)
+        return text
+
     # 替换符号前后的数字并进行处理
     def replace_symbol(match):
-        left, symbol, right = match.groups()
+        num1, symbol, num2 = match.groups()
         # 判断符号两边是否是数字
-        if left.isdigit() and right.isdigit():
-            left_num = int(left)
-            right_num = int(right)
+        if num1.isdigit() and num2.isdigit():
+            num1 = int(num1)
+            num2 = int(num2)
             # 判断数字大小来决定替换的符号
             if symbol == '-':
-                if left_num < right_num:
-                    return f"{left}至{right}"  # 当左边数字小于右边数字时，替换为"至"
+                if num1 < num2:
+                    return f"{num1}至{num2}"  # 当左边数字小于右边数字时，替换为"至"
                 else:
-                    return f"{left}减{right}"  # 否则，替换为"减"
+                    return f"{num1}减{num2}"  # 否则，替换为"减"
             elif symbol == '+':
-                return f"{left}加{right}"  # + 直接替换为 "加"
+                return f"{num1}加{num2}"  # + 直接替换为 "加"
             elif symbol == '=':
-                return f"{left}等于{right}"  # = 直接替换为 "等于"
+                return f"{num1}等于{num2}"  # = 直接替换为 "等于"
         return match.group(0)  # 如果不符合条件，则保持原样
 
     # 正则表达式匹配整数和小数
@@ -99,10 +109,8 @@ def process_text(ori_text):
 
     clean_text = re.sub(r'[|<>\[\]]', '', ori_text)
     # 使用正则表达式匹配符号前后的数字并进行替换
-    symbol_pattern = r'(\d+)([+-=])(\d+)'
-    translated_text = re.sub(symbol_pattern, replace_symbol, clean_text)
-    # symbol_replacements = {'-': '减', '+': '加', '=': '等于'}
-    symbol_replacements = {'+': '加', '=': '等于'}
+    translated_text = process_multiple_numbers(clean_text)
+    symbol_replacements = {'-': '', '+': '加', '=': '等于'}
     # 使用str.translate()和str.maketrans()来创建一个转换表，然后一次性替换所有指定的字符。
     translated_text = translated_text.translate(str.maketrans(symbol_replacements))
     # 使用 re.sub 替换文本中的数字
