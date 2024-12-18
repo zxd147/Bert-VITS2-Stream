@@ -14,24 +14,8 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from config import config
-
-logging.getLogger("numba").setLevel(logging.WARNING)
 import commons
-from utils.data_utils import (
-    TextAudioSpeakerLoader,
-    TextAudioSpeakerCollate,
-    DistributedBucketSampler,
-)
-from utils.model_utils import (get_hparams_from_file, get_logger, check_git_hash, download_checkpoint, load_checkpoint,
-                               save_checkpoint, clean_checkpoints, latest_checkpoint_path, get_steps,
-                               plot_spectrogram_to_numpy, plot_alignment_to_numpy, summarize)
-from models import (
-    SynthesizerTrn,
-    MultiPeriodDiscriminator,
-    DurationDiscriminator,
-    WavLMDiscriminator,
-)
+from config import config
 from losses import (
     generator_loss,
     discriminator_loss,
@@ -40,8 +24,23 @@ from losses import (
     WavLMLoss,
 )
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
+from models import (
+    SynthesizerTrn,
+    MultiPeriodDiscriminator,
+    DurationDiscriminator,
+    WavLMDiscriminator,
+)
 from text.symbols import symbols
+from utils.data_utils import (
+    TextAudioSpeakerLoader,
+    TextAudioSpeakerCollate,
+    DistributedBucketSampler,
+)
+from utils.model_utils import (get_hparams_from_file, get_logger, check_git_hash, download_checkpoint, load_checkpoint,
+                               save_checkpoint, clean_checkpoints, latest_checkpoint_path, get_steps,
+                               plot_spectrogram_to_numpy, plot_alignment_to_numpy, summarize, get_hparams)
 
+logging.getLogger("numba").setLevel(logging.WARNING)
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = (
     True  # If encountered training problem,please try to disable TF32.
@@ -97,21 +96,23 @@ def run():
     )
 
     parser.add_argument(
-        "-m",
-        "--model",
+        "-d",
+        "--dataset_path",
         type=str,
         help="数据集文件夹路径，请注意，数据不再默认放在/logs文件夹下。如果需要用命令行配置，请声明相对于根目录的路径",
         default=config.dataset_path,
     )
     args, _ = parser.parse_known_args()
-    model_dir = os.path.join(args.model, config.train_ms_config.model)
+    dataset_path: str = args.dataset_path
+    train_ms_model = config.train_ms_config.model
+    model_dir = os.path.join(dataset_path, train_ms_model)
     if not os.path.exists(model_dir):
         os.makedirs(model_dir, exist_ok=True)
     hps = get_hparams_from_file(args.config)
     hps.model_dir = model_dir
     # 比较路径是否相同
     if os.path.realpath(args.config) != os.path.realpath(
-        config.train_ms_config.config_path
+            config.train_ms_config.config_path
     ):
         with open(args.config, "r", encoding="utf-8") as f:
             data = f.read()
@@ -122,6 +123,7 @@ def run():
     torch.cuda.set_device(local_rank)
 
     global global_step
+    eval_loader, logger, writer, writer_eval = None, None, None, None
     if rank == 0:
         logger = get_logger(hps.model_dir)
         logger.info(hps)
@@ -160,8 +162,8 @@ def run():
             collate_fn=collate_fn,
         )
     if (
-        "use_noise_scaled_mas" in hps.model.keys()
-        and hps.model.use_noise_scaled_mas is True
+            "use_noise_scaled_mas" in hps.model.keys()
+            and hps.model.use_noise_scaled_mas is True
     ):
         print("Using noise scaled MAS for VITS2")
         mas_noise_scale_initial = 0.01
@@ -171,8 +173,8 @@ def run():
         mas_noise_scale_initial = 0.0
         noise_scale_delta = 0.0
     if (
-        "use_duration_discriminator" in hps.model.keys()
-        and hps.model.use_duration_discriminator is True
+            "use_duration_discriminator" in hps.model.keys()
+            and hps.model.use_duration_discriminator is True
     ):
         print("Using duration discriminator for VITS2")
         net_dur_disc = DurationDiscriminator(
@@ -185,8 +187,8 @@ def run():
     else:
         net_dur_disc = None
     if (
-        "use_spk_conditioned_encoder" in hps.model.keys()
-        and hps.model.use_spk_conditioned_encoder is True
+            "use_spk_conditioned_encoder" in hps.model.keys()
+            and hps.model.use_spk_conditioned_encoder is True
     ):
         if hps.data.n_speakers == 0:
             raise ValueError(
@@ -195,7 +197,7 @@ def run():
     else:
         print("Using normal encoder for VITS1")
 
-    net_g = SynthesizerTrn(
+    model = SynthesizerTrn(
         len(symbols),
         hps.data.filter_length // 2 + 1,
         hps.train.segment_size // hps.data.hop_length,
@@ -207,17 +209,17 @@ def run():
 
     if getattr(hps.train, "freeze_ZH_bert", False):
         print("Freezing ZH bert encoder !!!")
-        for param in net_g.enc_p.bert_proj.parameters():
+        for param in model.enc_p.bert_proj.parameters():
             param.requires_grad = False
 
     if getattr(hps.train, "freeze_EN_bert", False):
         print("Freezing EN bert encoder !!!")
-        for param in net_g.enc_p.en_bert_proj.parameters():
+        for param in model.enc_p.en_bert_proj.parameters():
             param.requires_grad = False
 
     if getattr(hps.train, "freeze_JP_bert", False):
         print("Freezing JP bert encoder !!!")
-        for param in net_g.enc_p.ja_bert_proj.parameters():
+        for param in model.enc_p.ja_bert_proj.parameters():
             param.requires_grad = False
 
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(local_rank)
@@ -225,7 +227,7 @@ def run():
         hps.model.slm.hidden, hps.model.slm.nlayers, hps.model.slm.initial_channel
     ).cuda(local_rank)
     optim_g = torch.optim.AdamW(
-        filter(lambda p: p.requires_grad, net_g.parameters()),
+        filter(lambda p: p.requires_grad, model.parameters()),
         hps.train.learning_rate,
         betas=hps.train.betas,
         eps=hps.train.eps,
@@ -251,7 +253,7 @@ def run():
         )
     else:
         optim_dur_disc = None
-    net_g = DDP(net_g, device_ids=[local_rank], bucket_cap_mb=512)
+    model = DDP(model, device_ids=[local_rank], bucket_cap_mb=512)
     net_d = DDP(net_d, device_ids=[local_rank], bucket_cap_mb=512)
     net_wd = DDP(net_wd, device_ids=[local_rank], bucket_cap_mb=512)
     if net_dur_disc is not None:
@@ -289,7 +291,7 @@ def run():
     try:
         _, optim_g, g_resume_lr, epoch_str = load_checkpoint(
             latest_checkpoint_path(hps.model_dir, "G_*.pth"),
-            net_g,
+            model,
             optim_g,
             skip_optimizer=(
                 hps.train.skip_optimizer if "skip_optimizer" in hps.train else True
@@ -314,7 +316,7 @@ def run():
             get_steps(latest_checkpoint_path(hps.model_dir, "G_*.pth"))
         )
         print(
-            f"******************检测到模型存在，epoch为 {epoch_str}，gloabl step为 {global_step}*********************"
+            f"******************检测到模型存在，epoch为 {epoch_str}，gloabl step为 {global_step}。*********************"
         )
     except Exception as e:
         print(e)
@@ -366,7 +368,7 @@ def run():
                 local_rank,
                 epoch,
                 hps,
-                [net_g, net_d, net_dur_disc, net_wd, wl],
+                [model, net_d, net_dur_disc, net_wd, wl],
                 [optim_g, optim_d, optim_dur_disc, optim_wd],
                 [scheduler_g, scheduler_d, scheduler_dur_disc, scheduler_wd],
                 scaler,
@@ -380,7 +382,7 @@ def run():
                 local_rank,
                 epoch,
                 hps,
-                [net_g, net_d, net_dur_disc, net_wd, wl],
+                [model, net_d, net_dur_disc, net_wd, wl],
                 [optim_g, optim_d, optim_dur_disc, optim_wd],
                 [scheduler_g, scheduler_d, scheduler_dur_disc, scheduler_wd],
                 scaler,
@@ -396,53 +398,54 @@ def run():
 
 
 def train_and_evaluate(
-    rank,
-    local_rank,
-    epoch,
-    hps,
-    nets,
-    optims,
-    schedulers,
-    scaler,
-    loaders,
-    logger,
-    writers,
+        rank,
+        local_rank,
+        epoch,
+        hps,
+        nets,
+        optims,
+        schedulers,
+        scaler,
+        loaders,
+        logger,
+        writers,
 ):
-    net_g, net_d, net_dur_disc, net_wd, wl = nets
+    model, net_d, net_dur_disc, net_wd, wl = nets
     optim_g, optim_d, optim_dur_disc, optim_wd = optims
     scheduler_g, scheduler_d, scheduler_dur_disc, scheduler_wd = schedulers
     train_loader, eval_loader = loaders
-    if writers is not None:
+    writer, writer_eval = None, None
+    if writers:
         writer, writer_eval = writers
 
     train_loader.batch_sampler.set_epoch(epoch)
     global global_step
 
-    net_g.train()
+    model.train()
     net_d.train()
     net_wd.train()
     if net_dur_disc is not None:
         net_dur_disc.train()
     for batch_idx, (
-        x,
-        x_lengths,
-        spec,
-        spec_lengths,
-        y,
-        y_lengths,
-        speakers,
-        tone,
-        language,
-        bert,
-        ja_bert,
-        en_bert,
+            x,
+            x_lengths,
+            spec,
+            spec_lengths,
+            y,
+            y_lengths,
+            speakers,
+            tone,
+            language,
+            bert,
+            ja_bert,
+            en_bert,
     ) in enumerate(tqdm(train_loader)):
-        if net_g.module.use_noise_scaled_mas:
+        if model.module.use_noise_scaled_mas:
             current_mas_noise_scale = (
-                net_g.module.mas_noise_scale_initial
-                - net_g.module.noise_scale_delta * global_step
+                    model.module.mas_noise_scale_initial
+                    - model.module.noise_scale_delta * global_step
             )
-            net_g.module.current_mas_noise_scale = max(current_mas_noise_scale, 0.0)
+            model.module.current_mas_noise_scale = max(current_mas_noise_scale, 0.0)
         x, x_lengths = x.cuda(local_rank, non_blocking=True), x_lengths.cuda(
             local_rank, non_blocking=True
         )
@@ -470,7 +473,7 @@ def train_and_evaluate(
                 (z, z_p, m_p, logs_p, m_q, logs_q),
                 (hidden_x, logw, logw_, logw_sdp),
                 g,
-            ) = net_g(
+            ) = model(
                 x,
                 x_lengths,
                 spec,
@@ -534,11 +537,7 @@ def train_and_evaluate(
                 y_dur_hat_g = y_dur_hat_g + y_dur_hat_g_sdp
                 with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
                     # TODO: I think need to mean using the mask, but for now, just mean all
-                    (
-                        loss_dur_disc,
-                        losses_dur_disc_r,
-                        losses_dur_disc_g,
-                    ) = discriminator_loss(y_dur_hat_r, y_dur_hat_g)
+                    loss_dur_disc, losses_dur_disc_r, losses_dur_disc_g = discriminator_loss(y_dur_hat_r, y_dur_hat_g)
                     loss_dur_disc_all = loss_dur_disc
                 optim_dur_disc.zero_grad()
                 scaler.scale(loss_dur_disc_all).backward()
@@ -590,13 +589,13 @@ def train_and_evaluate(
                 loss_lm_gen = wl.generator(y_hat.squeeze())
 
                 loss_gen_all = (
-                    loss_gen
-                    + loss_fm
-                    + loss_mel
-                    + loss_dur
-                    + loss_kl
-                    + loss_lm
-                    + loss_lm_gen
+                        loss_gen
+                        + loss_fm
+                        + loss_mel
+                        + loss_dur
+                        + loss_kl
+                        + loss_lm
+                        + loss_lm_gen
                 )
                 if net_dur_disc is not None:
                     loss_dur_gen, losses_dur_gen = generator_loss(y_dur_hat_g)
@@ -605,8 +604,8 @@ def train_and_evaluate(
         scaler.scale(loss_gen_all).backward()
         scaler.unscale_(optim_g)
         if getattr(hps.train, "bf16_run", False):
-            torch.nn.utils.clip_grad_norm_(parameters=net_g.parameters(), max_norm=500)
-        grad_norm_g = commons.clip_grad_value_(net_g.parameters(), None)
+            torch.nn.utils.clip_grad_norm_(parameters=model.parameters(), max_norm=500)
+        grad_norm_g = commons.clip_grad_value_(model.parameters(), None)
         scaler.step(optim_g)
         scaler.update()
 
@@ -697,9 +696,9 @@ def train_and_evaluate(
                 )
 
             if global_step % hps.train.eval_interval == 0:
-                evaluate(hps, net_g, eval_loader, writer_eval)
+                evaluate(hps, model, eval_loader, writer_eval)
                 save_checkpoint(
-                    net_g,
+                    model,
                     optim_g,
                     hps.train.learning_rate,
                     epoch,
@@ -750,18 +749,18 @@ def evaluate(hps, generator, eval_loader, writer_eval):
     print("Evaluating ...")
     with torch.no_grad():
         for batch_idx, (
-            x,
-            x_lengths,
-            spec,
-            spec_lengths,
-            y,
-            y_lengths,
-            speakers,
-            tone,
-            language,
-            bert,
-            ja_bert,
-            en_bert,
+                x,
+                x_lengths,
+                spec,
+                spec_lengths,
+                y,
+                y_lengths,
+                speakers,
+                tone,
+                language,
+                bert,
+                ja_bert,
+                en_bert,
         ) in enumerate(eval_loader):
             x, x_lengths = x.cuda(), x_lengths.cuda()
             spec, spec_lengths = spec.cuda(), spec_lengths.cuda()
@@ -816,8 +815,8 @@ def evaluate(hps, generator, eval_loader, writer_eval):
                 audio_dict.update(
                     {
                         f"gen/audio_{batch_idx}_{use_sdp}": y_hat[
-                            0, :, : y_hat_lengths[0]
-                        ]
+                                                            0, :, : y_hat_lengths[0]
+                                                            ]
                     }
                 )
                 image_dict.update(

@@ -68,12 +68,26 @@ def save_one_model(speaker_models_config, language, temp_model_instances, device
 
 def process_text(ori_text):
     # 匹配多个数字和符号组合，例如 100-300-500
-    def process_multiple_numbers(text):
-        pattern = r'(\d+)([+-=])(\d+)'  # 匹配单组数字和符号
-        while re.findall(r'\d+[-+=]\d+', text):
-            text = re.sub(pattern, replace_symbol, text)
-        pattern_negative = r'(?<!\d)(-)(\d+)'  # (?<!\d) 确保负号前没有数字, 将 '-' 替换为 "负"
-        text = re.sub(pattern_negative, lambda match: f"负{match.group(2)}", text)
+    def process_symbol(text):
+        replace_pattern = r'(\d+)([+-=])(\d+)'  # 匹配单组数字和符号
+        find_pattern = r'\d+[-+=]\d+'
+        negative_pattern = r'(?<!\d)(-)(\d+)'  # (?<!\d) 确保负号前没有数字, 将 '-' 替换为 "负"
+        while re.findall(find_pattern, text):
+            text = re.sub(replace_pattern, replace_symbol, text)
+        text = re.sub(negative_pattern, lambda match: f"负{match.group(2)}", text)
+        return text
+
+    def process_num(text):
+        # 使用 re.sub 替换文本中的数字
+        num__pattern = r'\d+(\.\d+)?'
+        text = re.sub(num__pattern, replace_num, text)
+        return text
+
+    def translated_symbol(text):
+        # 使用str.translate()和str.maketrans()来创建一个转换表
+        symbol_replacements = {'-': '', '+': '加', '=': '等于'}
+        # 一次性替换所有指定的字符。
+        text = text.translate(str.maketrans(symbol_replacements))
         return text
 
     # 替换符号前后的数字并进行处理
@@ -96,7 +110,7 @@ def process_text(ori_text):
         return match.group(0)  # 如果不符合条件，则保持原样
 
     # 正则表达式匹配整数和小数
-    def process_num(match):
+    def replace_num(match):
         num = match.group()  # 获取匹配的数字
         is_year = '年' in ori_text[match.start():min(len(ori_text), match.end() + 2)]  # 检查后面是否跟有“年”
         if is_year:  # 如果是年份
@@ -109,12 +123,11 @@ def process_text(ori_text):
 
     clean_text = re.sub(r'[|<>\[\]]', '', ori_text)
     # 使用正则表达式匹配符号前后的数字并进行替换
-    translated_text = process_multiple_numbers(clean_text)
-    symbol_replacements = {'-': '', '+': '加', '=': '等于'}
-    # 使用str.translate()和str.maketrans()来创建一个转换表，然后一次性替换所有指定的字符。
-    translated_text = translated_text.translate(str.maketrans(symbol_replacements))
-    # 使用 re.sub 替换文本中的数字
-    converted_text = re.sub(r'\d+(\.\d+)?', process_num, translated_text)
+    replace_text = process_symbol(clean_text)
+    # 使用映射表替换字符
+    translated_text = translated_symbol(replace_text)
+    # 处理数字的读法
+    converted_text = process_num(translated_text)
     return converted_text
 
 
