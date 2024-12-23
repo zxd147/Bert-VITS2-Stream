@@ -219,7 +219,7 @@ class GenerateRequest(BaseModel):
     uid: Union[int, str] = 'admin'
     text: str
     stream: Optional[bool] = None
-    speaker: Literal['jt', 'huang', 'li', 'yu'] = 'jt'
+    speaker: Literal['jt', 'huang', 'li', 'yu', 'gu'] = 'jt'
     language: Literal['zh', 'en', 'ja', 'mix'] = 'zh'
     speech_rate: confloat(ge=0.0, le=2.0) = 1.1  # speech_rate 必须是 0.0 到 2.0 之间的浮点数
     cut_by_sent: bool = False
@@ -263,8 +263,8 @@ class BasicAuthMiddleware(BaseHTTPMiddleware):
 vits_logger = logger
 vits_app = FastAPI()
 secret_key = os.getenv('VITS2-SECRET-KEY', 'sk-vits2')
-vits_app.add_middleware(CORSMiddleware, allow_origins=['*'], allow_credentials=True, allow_methods=['*'], allow_headers=['*'], )
 vits_app.add_middleware(BasicAuthMiddleware, secret_key=secret_key)
+vits_app.add_middleware(CORSMiddleware, allow_origins=['*'], allow_credentials=True, allow_methods=['*'], allow_headers=['*'], )
 
 # 创建一个线程池
 executor = ThreadPoolExecutor(max_workers=3)
